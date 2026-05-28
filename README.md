@@ -15,7 +15,7 @@ By leveraging the dual built-in CAN controllers (CAN0 and CAN1) routed through e
 * **Bit Timing:** Researched CAN bit timing architecture and calculated the appropriate Baud Rate Prescaler (BRP) using the standard bit rate formula to establish a stable connection.
 
 Transceiver Used:
-<img width="1034" height="451" alt="image" src="https://github.com/user-attachments/assets/c66ab656-dcd9-4d3e-8a82-5c9788089e8a" />
+<img width="1536" height="2048" alt="WhatsApp Image 2026-05-28 at 00 55 18" src="https://github.com/user-attachments/assets/0836dada-bb5c-497d-9a8c-5f19a5d747bf" />
 
 ### Wiring Setup
 The physical bus uses a twisted-pair configuration to resolve electromagnetic interference (EMI) and maintain signal integrity.
@@ -27,7 +27,7 @@ The physical bus uses a twisted-pair configuration to resolve electromagnetic in
 **The Physical Bus (Backbone)**
 * `CANH` on Transceiver 1 <---> `CANH` on Transceiver 2
 * `CANL` on Transceiver 1 <---> `CANL` on Transceiver 2
-*(These two wires are twisted together between the nodes).*
+(These two wires are twisted together between the nodes).
 
 **Node 1 (CAN0 - Engine ECU)**
 * `VCC`  -> MCU 3.3V
@@ -42,12 +42,12 @@ The physical bus uses a twisted-pair configuration to resolve electromagnetic in
 * `RXD`  -> MCU Pin PB0 (CAN1RX)
 
 ## The Intrusion Detection System (IDS)
-*(Planned)*
+(Planned)
 Running concurrently on the same Cortex-M4 core is a lightweight, custom-built Intrusion Detection System. It actively monitors the raw bus traffic at the hardware level to detect and flag common automotive cybersecurity threats, including:
 * **Timing Violations:** Detecting messages sent outside their expected frequency windows.
 * **Unexpected Message IDs:** Flagging unauthorized or unknown device IDs attempting to transmit on the bus.
 * **Value Spoofing:** Identifying physically impossible data jumps (e.g., an instant spike from 0 to 100% throttle).
 
 ## Traffic Visualization
-*(Planned)*
+(Planned)
 The firmware will interface with a custom Python dashboard that visualizes the live bus traffic over a serial connection. It will log standard telemetry while instantly flagging network anomalies and spoofing attempts in real time.
