@@ -1,0 +1,4 @@
+# Keil build folders and user files
+Objects/
+Listings/
+*.uvguix.*
