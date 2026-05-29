@@ -1,4 +1,6 @@
 #include "gpio.h"
+#include "tm4c1294ncpdt.h"
+#include <stdint.h>
 
 void PortN_Init(void) {
 	
@@ -20,4 +22,22 @@ void PortF_Init(void) {
 	GPIO_PORTF_DIR_R |= 0x11; //Enables the first and fourth bits to be outputs
 	GPIO_PORTF_DEN_R |= 0xFF; //Enables Digital I/O on Port F
 	
+}
+
+void CAN_Init(void) {
+
+  //PORT A
+  SYSCTL_RCGCGPIO_R |= SYSCTL_RCGCGPIO_R0; //Enables clock for Port A
+  while ((SYSCTL_PRGPIO_R&SYSCTL_PRGPIO_R0) == 0) {} //waits until bit 0 is set
+	GPIO_PORTA_AFSEL_R |= 0x03; //enables pin to peripheral feature
+	GPIO_PORTA_PCTL_R |= 0x00000077; //write 7 into PMC0 (port A)
+	GPIO_PORTA_DEN_R |= 0x03; //enable digital function
+		
+	//PORT B
+	SYSCTL_RCGCGPIO_R |= SYSCTL_RCGCGPIO_R1; //Enables clock for Port B
+	while ((SYSCTL_PRGPIO_R&SYSCTL_PRGPIO_R1) == 0) {} //waits until bit 1 is set
+	GPIO_PORTB_AFSEL_R |= 0x03; //enables pin to peripheral feature
+	GPIO_PORTB_PCTL_R |= 0x00000077; //write 7 into PMC1 (port B)
+	GPIO_PORTB_DEN_R |= 0x03; //enable digital function
+		
 }
