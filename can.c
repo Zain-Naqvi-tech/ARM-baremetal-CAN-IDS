@@ -1,11 +1,16 @@
 #include "can.h"
 #include <stdint.h>
 #include "tm4c1294ncpdt.h"
+#include "gpio.h"
 
 #define TX_MSG_OBJ 1
 #define RX_MSG_OBJ 1
+#define DA1 0x11
+#define DA2 0x22
+#define DB1 0x33
+#define DB2 0x44
 
-uint32_t CanID = 0x100; //Specific CANID for a message
+const uint32_t CanID = 0x100; //Specific CANID for a message
 
 //This is TX
 void CAN0_Init(void) {
@@ -29,7 +34,9 @@ void CAN0_Init(void) {
 
     CAN0_CTL_R &= ~CAN_CTL_CCE; //Clear CCE bit 
     CAN0_CTL_R &= ~CAN_CTL_INIT; //Clear INIT bit to leave initialisation stage
-
+			
+		LED1_ON(); //Turn on LED1 to indicate that the initialisation was a success
+		
 }
 
 //This is RX
@@ -71,6 +78,8 @@ void CAN1_Init(void) {
     //write object number to CANIF2CRQ Register's MNUM and wait for BUSY to clear
     CAN1_IF2CRQ_R = (1 << CAN_IF2CRQ_MNUM_S);
     while ((CAN1_IF2CRQ_R & CAN_IF2CRQ_BUSY) != 0) {} //polls until BUSY clears
+			
+    LED2_ON(); //Turn on LED2 to indicate success
 
 }
 
@@ -96,13 +105,33 @@ void CAN0_Transmit(void) {
     CAN0_IF1MCTL_R |= CAN_IF1MCTL_TXRQST; //Set TXRQST (transmit request) bit to 1 to request transmission of the message object
 
     //add payload - The pattern i'm expecting is [11 00 22 00 33 00 44 00]
-    CAN0_IF1DA1_R = 0x11;
-    CAN0_IF1DA2_R = 0x22;
-    CAN0_IF1DB1_R = 0x33;
-    CAN0_IF1DB2_R = 0x44;
+    CAN0_IF1DA1_R = DA1;
+    CAN0_IF1DA2_R = DA2;
+    CAN0_IF1DB1_R = DB1;
+    CAN0_IF1DB2_R = DB2;
 
     //write object number
     CAN0_IF1CRQ_R = (1 << CAN_IF1CRQ_MNUM_S);
     while ((CAN0_IF1CRQ_R & CAN_IF1CRQ_BUSY) != 0) {} //polls until BUSY clears
+			
+		LED3_ON();
 
+}
+
+//Setting up CAN1 to receive and show the message object
+void CAN1_Receive(void) {
+	
+	while ((CAN1_NWDA1_R & (1 << CAN_NWDA1_NEWDAT_S)) == 0) {} //poll NEWDAT until a new frame is received. It is only received when the NEWDAT bit is set. 
+    CAN1_IF2CMSK_R &= ~CAN_IF2CMSK_WRNRD; //Set WRNRD bit to 0 to read. Transfer the data in the CANIF2 
+    CAN1_IF2CMSK_R |= CAN_IF2CMSK_ARB; //Set ARB (Access Arbitration Bits) bit to 1 to Transfer ID + DIR + XTD + MSGVAL of the message object into the Interface registers
+    CAN1_IF2CMSK_R |= CAN_IF2CMSK_CONTROL; //Set CONTROL bit to 1 to  Transfer control bits from the CANIFnMCTL register into the Interface registers.
+    CAN1_IF2CMSK_R |= CAN_IF2CMSK_DATAA;
+    CAN1_IF2CMSK_R |= CAN_IF2CMSK_DATAB;
+    CAN1_IF2CMSK_R |= CAN_IF2CMSK_CLRINTPND; //Set CLRINTPND bit to 1 to clear the interrupt pending bit for the message object
+    CAN1_IF2CMSK_R |= CAN_IF2CMSK_NEWDAT; //Set NEWDAT bit to 1 to transfer the new data received into the Interface registers
+    CAN1_IF2CRQ_R = (1 << CAN_IF2CRQ_MNUM_S); //write object number. 
+    while ((CAN1_IF2CRQ_R & CAN_IF2CRQ_BUSY) != 0) {} //polls until BUSY clears
+
+
+	
 }

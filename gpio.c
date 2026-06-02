@@ -9,9 +9,7 @@ void PortN_Init(void) {
 	
 	GPIO_PORTN_DIR_R |= 0x03; //Enables the first and second bits to be outputs
 	GPIO_PORTN_DEN_R |= 0x03; //Enables Digital I/O on Port N
-		
-	return; 
-
+	
 }
 
 void PortF_Init(void) {
@@ -27,8 +25,8 @@ void PortF_Init(void) {
 void GPIO_Init(void) {
 
   //PORT A
-  	SYSCTL_RCGCGPIO_R |= SYSCTL_RCGCGPIO_R0; //Enables clock for Port A
-  	while ((SYSCTL_PRGPIO_R&SYSCTL_PRGPIO_R0) == 0) {} //waits until bit 0 is set
+  SYSCTL_RCGCGPIO_R |= SYSCTL_RCGCGPIO_R0; //Enables clock for Port A
+  while ((SYSCTL_PRGPIO_R&SYSCTL_PRGPIO_R0) == 0) {} //waits until bit 0 is set
 	GPIO_PORTA_AFSEL_R |= 0x03; //enables pin to peripheral feature
 	GPIO_PORTA_PCTL_R |= 0x00000077; //write 7 into PMC0 (port A)
 	GPIO_PORTA_DEN_R |= 0x03; //enable digital function
@@ -40,4 +38,36 @@ void GPIO_Init(void) {
 	GPIO_PORTB_PCTL_R |= 0x00000077; //write 7 into PMC1 (port B)
 	GPIO_PORTB_DEN_R |= 0x03; //enable digital function
 		
+}
+
+void LED1_ON(void) {
+	GPIO_PORTN_DATA_R |= 0x02;
+}
+
+void LED2_ON(void) {
+	GPIO_PORTN_DATA_R |= 0x01;
+}
+
+void LED3_ON(void) {
+	GPIO_PORTF_DATA_R |= 0x10;
+}
+
+void LED4_ON(void) {
+	GPIO_PORTF_DATA_R |= 0x01;
+}
+
+void LED1_OFF(void) {
+	GPIO_PORTN_DATA_R &= ~0x02;
+}
+
+void LED2_OFF(void) {
+	GPIO_PORTN_DATA_R &= ~0x01;
+}
+
+void LED3_OFF(void) {
+	GPIO_PORTF_DATA_R &= ~0x10;
+}
+
+void LED4_OFF(void) {
+	GPIO_PORTF_DATA_R &= ~0x01;
 }

@@ -3,6 +3,6 @@
 
 void CAN0_Init(void);
 void CAN1_Init(void);
-void CAN_Transmit(void);
+void CAN0_Transmit(void);
 
 #endif
