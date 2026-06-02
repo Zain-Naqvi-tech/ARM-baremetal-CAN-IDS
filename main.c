@@ -5,6 +5,8 @@
 #include "gpio.h"
 #include "can.h"
 
+Msg message;
+
 int main(void) {
 
 	PLL_Init(); //Sets the clock speed at 120MHz
@@ -13,7 +15,8 @@ int main(void) {
 	PortN_Init(); //Initializes Port N
 	PortF_Init(); //Initializes Port F
 	CAN0_Init(); //Initialise CAN0 as TX
-	CAN1_Init(); //Initialise CAN1 sa RX
+	CAN1_Init(); //Initialise CAN1 as RX
 	CAN0_Transmit(); //Send Data out of CAN0
+	CAN1_Receive(&message); //Extract the data from the registers
 	
 }
