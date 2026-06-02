@@ -41,6 +41,26 @@ The physical bus uses a twisted-pair configuration to resolve electromagnetic in
 * `TXD`  -> MCU Pin PB1 (CAN1TX)
 * `RXD`  -> MCU Pin PB0 (CAN1RX)
 
+## Milestone 1 — TX/RX Proof of Life
+
+The first integration milestone: a single CAN frame transmitted from CAN0, received by CAN1 across a physical two-node bus, and parsed out of the receiving message object. No CAN library used
+
+**What this proves**
+- Both CAN controllers brought up from raw registers with a bit timing for 500 kbps (BRP=14, TSEG1=12, TSEG2=3) and message-object configuration using the IF1/IF2 indirect interface
+- CAN0 transmits a standard 11-bit frame
+- CAN1 receives it, and the firmware reads the frame back out of the message object (`WRNRD=0`) and parses ID, DLC, and the 8 payload bytes into a `Msg` struct
+
+**Verified result**: debugger watch window after one TX → RX cycle:
+
+| Field | Expected | Observed |
+|-------|----------|----------|
+| CAN ID | `0x100` | `0x100` |
+| DLC | `8` | `8` |
+| Payload | `11 00 22 00 33 00 44 00` | `11 00 22 00 33 00 44 00` |
+| CAN0 TXOK | set | set |
+
+![Milestone 1 — received CAN frame parsed into the Msg struct, shown in the debugger watch window](![alt text](image.png))
+
 ## The Intrusion Detection System (IDS)
 (Planned)
 Running concurrently on the same Cortex-M4 core is a lightweight, custom-built Intrusion Detection System. It actively monitors the raw bus traffic at the hardware level to detect and flag common automotive cybersecurity threats, including:
