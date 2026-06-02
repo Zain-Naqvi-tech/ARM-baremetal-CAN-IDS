@@ -53,6 +53,7 @@ The first integration milestone: a single CAN frame transmitted from CAN0, recei
 **Verified result**: debugger watch window after one TX → RX cycle:
 
 ![alt text](image.png)
+
 Milestone 1: Received CAN frame parsed into the Msg struct, shown in the debugger watch window
 
 ## The Intrusion Detection System (IDS)
