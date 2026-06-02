@@ -52,14 +52,7 @@ The first integration milestone: a single CAN frame transmitted from CAN0, recei
 
 **Verified result**: debugger watch window after one TX → RX cycle:
 
-| Field | Expected | Observed |
-|-------|----------|----------|
-| CAN ID | `0x100` | `0x100` |
-| DLC | `8` | `8` |
-| Payload | `11 00 22 00 33 00 44 00` | `11 00 22 00 33 00 44 00` |
-| CAN0 TXOK | set | set |
-
-![Milestone 1 — received CAN frame parsed into the Msg struct, shown in the debugger watch window](![alt text](image.png))
+Milestone 1: Received CAN frame parsed into the Msg struct, shown in the debugger watch window![alt text](image.png)
 
 ## The Intrusion Detection System (IDS)
 (Planned)
