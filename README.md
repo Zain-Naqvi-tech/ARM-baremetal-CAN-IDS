@@ -56,6 +56,24 @@ The first integration milestone: a single CAN frame transmitted from CAN0, recei
 
 Milestone 1: Received CAN frame parsed into the Msg struct, shown in the debugger watch window
 
+**Goal:** Stream live CAN traffic to a host PC using UART
+
+**Why UART2:** Enabling CAN0 (jumpers JP4/JP5) reassigns PA0/PA1 away from
+UART0, so per the board user guide UART2 (PD4/PD5) becomes the XDS-110
+backchannel.
+
+**Config:** 115200 8-N-1, PIOSC clock (IBRD 8 / FBRD 44); PD4/PD5 muxed to
+UART2 alternate function, Port D clock enabled.
+
+**Trace format** — `Message_Object_UART_Print()` emits fixed CSV
+`DIR,ID,DLC,payload…,timestamp`:
+
+```
+RX,0x100,8,0x11,0x00,0x22,0x00,0x33,0x00,0x44,0x00,0
+```
+
+![UART2 CAN trace in RealTerm](![alt text](image-1.png))
+
 ## The Intrusion Detection System (IDS)
 (Planned)
 Running concurrently on the same Cortex-M4 core is a lightweight, custom-built Intrusion Detection System. It actively monitors the raw bus traffic at the hardware level to detect and flag common automotive cybersecurity threats, including:
