@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include "tm4c1294ncpdt.h"
 #include "gpio.h"
+#include "uart.h"
 
 #define TX_MSG_OBJ 1
 #define RX_MSG_OBJ 1
@@ -143,5 +144,6 @@ void CAN1_Receive(Msg* message) {
 		message->payload[6] = CAN1_IF2DB2_R & 0x00FF;
 		message->payload[7] = (CAN1_IF2DB2_R >> 8) & 0xFF;
 		
-	
+		Message_Object_UART_Print(0, message);
+			
 }

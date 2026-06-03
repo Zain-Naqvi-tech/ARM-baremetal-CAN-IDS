@@ -1,4 +1,3 @@
-
 #include "uart.h"
 #include "tm4c1294ncpdt.h"
 #include <stdint.h>
@@ -6,42 +5,45 @@
 
 static char printf_buffer[1023];
 
+//We are using UART2 because PA1/PA2 are now being used for CAN communication
 void UART_Init(void) {
-	SYSCTL_RCGCUART_R |= 0x0001; // activate UART0 
-	SYSCTL_RCGCGPIO_R |= 0x0001; // activate port A 
-	//UART0_CTL_R &= ~0x0001; // disable UART 
+	SYSCTL_RCGCUART_R |= 0x0004; // activate UART2 - Bit 2
+	SYSCTL_RCGCGPIO_R |= 0x0008; // activate port D clock
+	
+	//UART2_CTL_R &= ~0x0004; // disable UART 
 
-	while((SYSCTL_PRUART_R&SYSCTL_PRUART_R0) == 0){};
+	while((SYSCTL_PRUART_R&SYSCTL_PRUART_R2) == 0){};
 		
-  UART0_CTL_R &= ~UART_CTL_UARTEN;      // disable UART
-  UART0_IBRD_R = 8;                     // IBRD = int(16,000,000 / (16 * 115,200)) = int(8.681)
-  UART0_FBRD_R = 44;                    // FBRD = round(0.6806 * 64) = 44
+  UART2_CTL_R &= ~UART_CTL_UARTEN;      // disable UART
+  UART2_IBRD_R = 8;                     // IBRD = int(16,000,000 / (16 * 115,200)) = int(8.681) -> uses the PIOSC (16MHz)
+  UART2_FBRD_R = 44;                    // FBRD = round(0.6806 * 64) = 44
                                         // 8 bit word length (no parity bits, one stop bit, FIFOs)
-  UART0_LCRH_R = (UART_LCRH_WLEN_8|UART_LCRH_FEN);
                                         // UART gets its clock from the alternate clock source as defined by SYSCTL_ALTCLKCFG_R
-  UART0_CC_R = (UART0_CC_R&~UART_CC_CS_M)+UART_CC_CS_PIOSC;
+  UART2_CC_R = (UART2_CC_R&~UART_CC_CS_M)+UART_CC_CS_PIOSC;
                                         // the alternate clock source is the PIOSC (default)
   SYSCTL_ALTCLKCFG_R = (SYSCTL_ALTCLKCFG_R&~SYSCTL_ALTCLKCFG_ALTCLK_M)+SYSCTL_ALTCLKCFG_ALTCLK_PIOSC;
-  UART0_CTL_R &= ~UART_CTL_HSE;         // high-speed disable; divide clock by 16 rather than 8 (default)
+  UART2_CTL_R &= ~UART_CTL_HSE;         // high-speed disable; divide clock by 16 rather than 8 (default)
 
-	UART0_LCRH_R = 0x0070;		// 8-bit word length, enable FIFO 
-	UART0_CTL_R = 0x0301;			// enable RXE, TXE and UART 
-	GPIO_PORTA_PCTL_R = (GPIO_PORTA_PCTL_R&0xFFFFFF00)+0x00000011; // UART 
-	GPIO_PORTA_AMSEL_R &= ~0x03;	// disable analog function on PA1-0 
-	GPIO_PORTA_AFSEL_R |= 0x03;		// enable alt funct on PA1-0 
-	GPIO_PORTA_DEN_R |= 0x03;			// enable digital I/O on PA1-0 
+	UART2_LCRH_R = 0x0070;		// 8-bit word length, enable FIFO 
+	UART2_CTL_R = 0x0301;			// enable RXE, TXE and UART 
+		
+	//Ports PD4 and PD5 are needed
+	GPIO_PORTD_PCTL_R = (GPIO_PORTD_PCTL_R&0xFF00FFFF)+0x00110000; // UART   
+  GPIO_PORTD_AMSEL_R &= ~0x30;    // disable analog function on PA1-0   
+  GPIO_PORTD_AFSEL_R |= 0x30;        // enable alt funct on PA1-0   
+  GPIO_PORTD_DEN_R |= 0x30;            // enable digital I/O on PA1-0 
 }
 
 // Wait for new input, then return ASCII code 
 	char UART_InChar(void) {
-		while((UART0_FR_R&0x0010) != 0);		// wait until RXFE is 0 
-		return((char)(UART0_DR_R&0xFF));
+		while((UART2_FR_R&0x0010) != 0);		// wait until RXFE is 0 
+		return((char)(UART2_DR_R&0xFF));
 	} 
 	
 	// Wait for buffer to be not full, then output 
 	void UART_OutChar(char data){
-		while((UART0_FR_R&0x0020) != 0);	// wait until TXFF is 0 
-		UART0_DR_R = data;
+		while((UART2_FR_R&0x0020) != 0);	// wait until TXFF is 0 
+		UART2_DR_R = data;
 	} 
 	void UART_printf(const char* array){
 		int ptr=0;
@@ -62,21 +64,19 @@ void UART_Init(void) {
 				UART_printf(" Successful.\r\n");
 			}
 	}
-
-//We need to essentially extract the three parts of our packet, event, index, and timestamp and OutChar them at the same time
-void UART_Trace(uint32_t Packet) {
-
-    //Extract all bits as needed
-	uint8_t event = (uint8_t)((Packet >> 24) & 0xFF);
-	uint8_t index = (uint8_t)((Packet >> 16) & 0xFF);
-	uint16_t timestamp = (uint16_t)(Packet & 0xFFFF);
-
-    //Send out using Big-Endian format
-    UART_OutChar((char)event);
-    UART_OutChar((char)index);
-    UART_OutChar((char)((timestamp >> 8) & 0xFF)); //Send the higher byte of the timestamp
-    UART_OutChar((char)(timestamp & 0xFF)); //Send the lower byte of the timestamp
-
-}
-
 	
+	//Prints out the message object elements for better CAN demo and debugging
+	//RX/TX,CANID,DLC,payload bits,timestamp
+	void Message_Object_UART_Print(uint32_t direction, Msg* message) {
+		//Direction==1 is TX and Direction==0 is RX
+		if (direction) {UART_printf("TX,");} else {UART_printf("RX,");}
+		sprintf(printf_buffer, "0x%X,%d,", message->canID, message->DLC);
+		UART_printf(printf_buffer);
+		for (int i = 0; i < message->DLC; i++) {
+			sprintf(printf_buffer, "0x%02X,", message->payload[i]);
+			UART_printf(printf_buffer);
+		}
+		sprintf(printf_buffer, "%d\r\n", message->timeStamp);
+		UART_printf(printf_buffer);
+		
+	}
