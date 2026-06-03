@@ -56,7 +56,7 @@ The first integration milestone: a single CAN frame transmitted from CAN0, recei
 
 Milestone 1: Received CAN frame parsed into the Msg struct, shown in the debugger watch window
 
-**Goal:** Stream live CAN traffic to a host PC using UART
+## **Goal:** Stream live CAN traffic to a host PC using UART
 
 **Why UART2:** Enabling CAN0 (jumpers JP4/JP5) reassigns PA0/PA1 away from
 UART0, so per the board user guide UART2 (PD4/PD5) becomes the XDS-110
@@ -72,7 +72,7 @@ UART2 alternate function, Port D clock enabled.
 RX,0x100,8,0x11,0x00,0x22,0x00,0x33,0x00,0x44,0x00,0
 ```
 
-![UART2 CAN trace in RealTerm](![alt text](image-1.png))
+UART2 CAN trace in RealTerm![alt text](image-1.png)
 
 ## The Intrusion Detection System (IDS)
 (Planned)
