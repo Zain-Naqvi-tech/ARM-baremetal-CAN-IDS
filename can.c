@@ -3,15 +3,63 @@
 #include "tm4c1294ncpdt.h"
 #include "gpio.h"
 #include "uart.h"
-
-#define TX_MSG_OBJ 1
-#define RX_MSG_OBJ 1
-#define DA1 0x11
-#define DA2 0x22
-#define DB1 0x33
-#define DB2 0x44
+#include "systick.h"
 
 const uint16_t CanID = 0x100; //Specific CANID for a message
+
+void CAN_Message_Table_Init(Msg* msg) {
+
+		//Populating the simulated ENGINE RPM Message object
+		msg[ENGINE_RPM].canID = 0x100;
+		msg[ENGINE_RPM].period = 500; //500ms of difference between each message transmission
+		msg[ENGINE_RPM].DLC = 8;
+		msg[ENGINE_RPM].lastTransmitted = 0;
+		msg[ENGINE_RPM].overrunFlag = 0;
+		msg[ENGINE_RPM].timeStamp = 0;
+		for (int i = 0; i < msg[ENGINE_RPM].DLC; i++) {
+			msg[ENGINE_RPM].payload[i] = 0x10 + i;
+			}
+		
+		//Populating the simulated THROTTLE Message object
+		msg[THROTTLE].canID = 0x200;
+    msg[THROTTLE].period = 1000; //1000ms of difference between each message transmission
+    msg[THROTTLE].DLC = 8;
+    msg[THROTTLE].lastTransmitted = 0;
+    msg[THROTTLE].overrunFlag = 0;
+    msg[THROTTLE].timeStamp = 0;
+    for (int i = 0; i < msg[THROTTLE].DLC; i++) {
+        msg[THROTTLE].payload[i] = 0x20 + i;
+    }
+
+    //Populating the simulated VEHICLE SPEED Message object
+    msg[VEHICLE_SPEED].canID = 0x300;
+    msg[VEHICLE_SPEED].period = 2000; //2000ms of difference between each message transmission
+    msg[VEHICLE_SPEED].DLC = 8;
+    msg[VEHICLE_SPEED].lastTransmitted = 0;
+    msg[VEHICLE_SPEED].overrunFlag = 0;
+    msg[VEHICLE_SPEED].timeStamp = 0;
+    for (int i = 0; i < msg[VEHICLE_SPEED].DLC; i++) {
+        msg[VEHICLE_SPEED].payload[i] = 0x30 + i;
+    }
+
+    //Populating the simulated COOLANT TEMP Message object
+    msg[COOLANT_TEMP].canID = 0x400;
+    msg[COOLANT_TEMP].period = 4000; //4000ms of difference between each message transmission
+    msg[COOLANT_TEMP].DLC = 8;
+    msg[COOLANT_TEMP].lastTransmitted = 0;
+    msg[COOLANT_TEMP].overrunFlag = 0;
+    msg[COOLANT_TEMP].timeStamp = 0;
+    for (int i = 0; i < msg[COOLANT_TEMP].DLC; i++) {
+        msg[COOLANT_TEMP].payload[i] = 0x40 + i;
+    }
+		
+		for (int j = 0; j < NUMBER_OF_EVENTS; i++) {
+			
+			
+			
+		}
+
+}
 
 //This is TX
 void CAN0_Init(void) {
@@ -112,7 +160,7 @@ void CAN0_Transmit(void) {
     CAN0_IF1DB2_R = DB2;
 
     //write object number
-    CAN0_IF1CRQ_R = (1 << CAN_IF1CRQ_MNUM_S);
+    CAN0_IF1CRQ_R = (1 << CAN_IF1CRQ_MNUM_S); //Message object 1
     while ((CAN0_IF1CRQ_R & CAN_IF1CRQ_BUSY) != 0) {} //polls until BUSY clears
 			
 		LED3_ON();
@@ -143,6 +191,7 @@ void CAN1_Receive(Msg* message) {
 		message->payload[5] = (CAN1_IF2DB1_R >> 8) & 0xFF;
 		message->payload[6] = CAN1_IF2DB2_R & 0x00FF;
 		message->payload[7] = (CAN1_IF2DB2_R >> 8) & 0xFF;
+		message->timeStamp = ticks;
 		
 		Message_Object_UART_Print(0, message);
 			
