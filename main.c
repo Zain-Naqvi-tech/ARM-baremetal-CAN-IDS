@@ -18,11 +18,15 @@ int main(void) {
 	PortF_Init(); //Initialize Port F
 	CAN0_Init(); //Initialize CAN0 as TX
 	CAN1_Init(); //Initialize CAN1 as RX
-	for (int i = 0; i < NUMBER_OF_EVENTS; i++)
 	CAN_Message_Table_Init(message); 
+	CAN0_TX_Setup(message);
 	while (1) {
-		CAN0_Transmit(); //Send Data out of CAN0
-		CAN1_Receive(message); //Extract the data from the registers
+		for (int i = 0; i < NUMBER_OF_EVENTS; i++) {
+			if (ticks - message[i].lastTransmitted >= message[i].period) {
+				CAN0_Transmit(message, i);
+				message[i].lastTransmitted += message[i].period;
+			}
+		}
 	}
 	
 }

@@ -30,8 +30,9 @@ typedef enum {
 
 void CAN0_Init(void);
 void CAN1_Init(void);
-void CAN0_Transmit(void);
+void CAN0_Transmit(Msg* message, uint32_t index);
 void CAN1_Receive(Msg* message);
 void CAN_Message_Table_Init(Msg* msg);
+void CAN0_TX_Setup(Msg* msg);
 
 #endif

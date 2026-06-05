@@ -53,12 +53,21 @@ void CAN_Message_Table_Init(Msg* msg) {
         msg[COOLANT_TEMP].payload[i] = 0x40 + i;
     }
 		
-		for (int j = 0; j < NUMBER_OF_EVENTS; i++) {
-			
-			
+}
+
+void CAN0_TX_Setup(Msg* msg) {
+	
+		for (int i = 0; i < NUMBER_OF_EVENTS; i++) {
+
+			CAN0_IF1CMSK_R = CAN_IF1CMSK_WRNRD | CAN_IF1CMSK_ARB | CAN_IF1CMSK_CONTROL; //Setting the WRNRD, ARB, and CONTROL bits as a one-time assignment. The XTD bit is cleared so we know it is 11-bit
+			CAN0_IF1ARB2_R = (msg[i].canID << 2) | CAN_IF1ARB2_MSGVAL | CAN_IF1ARB2_DIR; //This puts the specific CANID in the Arbitration register. It also enables transmission and is ready to be considered by the message handler
+			CAN0_IF1MCTL_R = msg[i].DLC | CAN_IF1MCTL_EOB; //Indicates end of buffer and configures the DLC of the specific event
+		
+			CAN0_IF1CRQ_R = ((i + 1) << CAN_IF1CRQ_MNUM_S); //Message object i (1,2,3,4) - this creates the distinction in hardware
+			while ((CAN0_IF1CRQ_R & CAN_IF1CRQ_BUSY) != 0) {} //polls until BUSY clears
 			
 		}
-
+			
 }
 
 //This is TX
@@ -132,35 +141,21 @@ void CAN1_Init(void) {
 
 }
 
-//A clarification on the Interface registers. IF1 is used for TX and IF2 is used for RX. 
+//A clarification on the Interface registers. IF1 is used for TX (CAN0) and IF2 is used for RX (CAN1). 
 //Setting up CAN0 for TX
-void CAN0_Transmit(void) {
+void CAN0_Transmit(Msg* message, uint32_t index) {
 
     //Set up CAN0 for TX
-    CAN0_IF1CMSK_R |= CAN_IF1CMSK_WRNRD; //Set WRNRD bit to 1 to write. Transfer the data in the CANIF2 register to the CAN message object
-    CAN0_IF1CMSK_R |= CAN_IF1CMSK_ARB; //Set ARB (Access Arbitration Bits) bit to 1 to Transfer ID + DIR + XTD + MSGVAL of the message object into the Interface registers
-    CAN0_IF1CMSK_R |= CAN_IF1CMSK_CONTROL; //Set CONTROL bit to 1 to  Transfer control bits from the CANIFnMCTL register into the Interface registers.
-    CAN0_IF1CMSK_R |= CAN_IF1CMSK_DATAA;
-    CAN0_IF1CMSK_R |= CAN_IF1CMSK_DATAB;
+    CAN0_IF1CMSK_R = CAN_IF1CMSK_WRNRD | CAN_IF1CMSK_DATAA | CAN_IF1CMSK_DATAB | CAN_IF1CMSK_TXRQST; //Set the write not read bit to transfer the data from the interface registers specified by the MNUM in the command request
+		//The TXRQST bit is responsible for starting the transmission in this case
 
-    //For future, build in one go or clear first then do this
-    CAN0_IF1ARB2_R |= CAN_IF1ARB2_DIR; //Set DIR bit to TRANSMIT
-    CAN0_IF1ARB2_R |= (CanID << 2); //Lands in register [12:2]
-    CAN0_IF1ARB2_R |= CAN_IF1ARB2_MSGVAL; //Set MSGVAL bit to 1 to indicate that the message object is valid
-    CAN0_IF1ARB2_R &= ~CAN_IF1ARB2_XTD; //Clear XTD bit to indicate that this is a standard ID (11 bits)
-
-    CAN0_IF1MCTL_R |= 0x08; //Set the DLC field to a data frame of 8 bytes
-    CAN0_IF1MCTL_R |= CAN_IF1MCTL_EOB; //Set EOB (End of buffer) bit to 1 to indicate that this is the last message object
-    CAN0_IF1MCTL_R |= CAN_IF1MCTL_TXRQST; //Set TXRQST (transmit request) bit to 1 to request transmission of the message object
-
-    //add payload - The pattern i'm expecting is [11 00 22 00 33 00 44 00]
-    CAN0_IF1DA1_R = DA1;
-    CAN0_IF1DA2_R = DA2;
-    CAN0_IF1DB1_R = DB1;
-    CAN0_IF1DB2_R = DB2;
-
-    //write object number
-    CAN0_IF1CRQ_R = (1 << CAN_IF1CRQ_MNUM_S); //Message object 1
+    //add payload
+    CAN0_IF1DA1_R = (message[index].payload[0]) | (message[index].payload[1] << 8); //Low byte >> 8 OR High Byte << 8 - similar to the way we extracted at first 
+    CAN0_IF1DA2_R = (message[index].payload[2]) | (message[index].payload[3] << 8);
+    CAN0_IF1DB1_R = (message[index].payload[4]) | (message[index].payload[5] << 8);
+    CAN0_IF1DB2_R = (message[index].payload[6]) | (message[index].payload[7] << 8);
+		
+		CAN0_IF1CRQ_R = ((index + 1) << CAN_IF1CRQ_MNUM_S); //Message object index
     while ((CAN0_IF1CRQ_R & CAN_IF1CRQ_BUSY) != 0) {} //polls until BUSY clears
 			
 		LED3_ON();
