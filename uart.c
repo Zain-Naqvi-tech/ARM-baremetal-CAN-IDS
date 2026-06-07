@@ -67,7 +67,7 @@ void UART_Init(void) {
 	
 	//Prints out the message object elements for better CAN demo and debugging
 	//RX/TX,CANID,DLC,payload bits,timestamp
-	void Message_Object_UART_Print(uint32_t direction, Msg* message) {
+	void Message_Object_UART_Print(uint32_t direction, volatile Msg* message) {
 		//Direction==1 is TX and Direction==0 is RX
 		if (direction) {UART_printf("TX,");} else {UART_printf("RX,");}
 		sprintf(printf_buffer, "0x%X,%d,", message->canID, message->DLC);

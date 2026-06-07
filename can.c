@@ -4,10 +4,9 @@
 #include "gpio.h"
 #include "uart.h"
 #include "systick.h"
+#include "msp432e401y.h"
 
-const uint16_t CanID = 0x100; //Specific CANID for a message
-
-void CAN_Message_Table_Init(Msg* msg) {
+void CAN_Message_Table_Init(volatile Msg* msg) {
 
 		//Populating the simulated ENGINE RPM Message object
 		msg[ENGINE_RPM].canID = 0x100;
@@ -55,7 +54,7 @@ void CAN_Message_Table_Init(Msg* msg) {
 		
 }
 
-void CAN0_TX_Setup(Msg* msg) {
+void CAN0_TX_Setup(volatile Msg* msg) {
 	
 		for (int i = 0; i < NUMBER_OF_EVENTS; i++) {
 
@@ -97,6 +96,52 @@ void CAN0_Init(void) {
 		
 }
 
+//A clarification on the Interface registers. IF1 is used for TX (CAN0) and IF2 is used for RX (CAN1). 
+//Setting up CAN0 for TX
+void CAN0_Transmit(volatile Msg* message, uint32_t index) {
+
+    //Set up CAN0 for TX
+    CAN0_IF1CMSK_R = CAN_IF1CMSK_WRNRD | CAN_IF1CMSK_DATAA | CAN_IF1CMSK_DATAB | CAN_IF1CMSK_TXRQST; //Set the write not read bit to transfer the data from the interface registers specified by the MNUM in the command request
+		//The TXRQST bit is responsible for starting the transmission in this case
+
+    //add payload
+    CAN0_IF1DA1_R = (message[index].payload[0]) | (message[index].payload[1] << 8); //Low byte >> 8 OR High Byte << 8 - similar to the way we extracted at first 
+    CAN0_IF1DA2_R = (message[index].payload[2]) | (message[index].payload[3] << 8);
+    CAN0_IF1DB1_R = (message[index].payload[4]) | (message[index].payload[5] << 8);
+    CAN0_IF1DB2_R = (message[index].payload[6]) | (message[index].payload[7] << 8);
+		
+		CAN0_IF1CRQ_R = ((index + 1) << CAN_IF1CRQ_MNUM_S); //Message object index
+    while ((CAN0_IF1CRQ_R & CAN_IF1CRQ_BUSY) != 0) {} //polls until BUSY clears
+			
+		LED3_ON();
+
+}
+
+void CAN1_RX_Setup(volatile Msg* msg) {
+	
+		for (int i = 0; i < NUMBER_OF_EVENTS; i++) {
+	
+			CAN1_IF2CMSK_R = CAN_IF2CMSK_WRNRD | CAN_IF2CMSK_ARB | CAN_IF2CMSK_CONTROL; //Set WRNRD bit to 0 to read. Transfer the data in the CANIF2. Set ARB (Access Arbitration Bits) bit to 1 to Transfer ID + DIR + XTD + MSGVAL of the message object into the Interface registers. //Set CONTROL bit to 1 to  Transfer control bits from the CANIFnMCTL register into the Interface registers.
+			CAN1_IF2ARB2_R = CAN_IF2ARB2_MSGVAL | (msg[i].canID << 2); //Set the MSGVAL bit to 1 to show that the message is valid. Shift CANID left by two spaces to ensure that it lands in bits [2:12] of the ARB2 register
+			CAN1_IF2MCTL_R = 0x08 | CAN_IF2MCTL_EOB | CAN_IF2MCTL_RXIE; //Set the DLC value (8 bytes). Set EOB to show end of buffer. Set the receive interrupt enable bit
+			//This also keeps the TXRQST bit clear to prevent a remote frame transmission
+	
+			//write object number to CANIF2CRQ Register's MNUM and wait for BUSY to clear
+			CAN1_IF2CRQ_R = ((i + 1) << CAN_IF2CRQ_MNUM_S);
+			while ((CAN1_IF2CRQ_R & CAN_IF2CRQ_BUSY) != 0) {} //polls until BUSY clears
+				
+		}
+		
+			CAN1_CTL_R = CAN_CTL_IE; //Set bit 1 of CANCTL register to enable CAN interrupts
+				
+			//Set up NVIC CAN1_IRQHandler
+			NVIC_SetPriority(CAN1_IRQn, 0xFF); //Set PendSV to the lowest possible priority. 
+		
+			//Enable
+			NVIC_EnableIRQ(CAN1_IRQn);
+	
+}
+
 //This is RX
 void CAN1_Init(void) {
 
@@ -119,75 +164,59 @@ void CAN1_Init(void) {
 
     CAN1_CTL_R &= ~CAN_CTL_CCE; //Clear CCE bit 
     CAN1_CTL_R &= ~CAN_CTL_INIT; //Clear INIT bit to leave initialisation stage
-
-    //Set up CAN1 for RX. This needs to be done before anything ever transmits
-    CAN1_IF2CMSK_R |= CAN_IF2CMSK_WRNRD; //Set WRNRD bit to 1 to write. Transfer the data in the CANIF2 register to the CAN message object
-    CAN1_IF2CMSK_R |= CAN_IF2CMSK_ARB; //Set ARB (Access Arbitration Bits) bit to 1 to Transfer ID + DIR + XTD + MSGVAL of the message object into the Interface registers
-    CAN1_IF2CMSK_R |= CAN_IF2CMSK_CONTROL; //Set CONTROL bit to 1 to  Transfer control bits from the CANIFnMCTL register into the Interface registers.
-
-    CAN1_IF2ARB2_R &= ~CAN_IF2ARB2_DIR; //Clear DIR bit to RECEIVE
-    CAN1_IF2ARB2_R |= (CanID << 2); //Lands in register [12:2]
-    CAN1_IF2ARB2_R |= CAN_IF2ARB2_MSGVAL; //Set MSGVAL bit to 1 to indicate that the message object is valid
-    CAN1_IF2ARB2_R &= ~CAN_IF2ARB2_XTD; //Clear XTD bit to indicate that this is a standard ID (11 bits)
-
-    CAN1_IF2MCTL_R |= 0x08; //Set the DLC field to a data frame of 8 bytes
-    CAN1_IF2MCTL_R |= CAN_IF2MCTL_EOB; //Set EOB bit to 1 to indicate that this is the last message object that will be received
-
-    //write object number to CANIF2CRQ Register's MNUM and wait for BUSY to clear
-    CAN1_IF2CRQ_R = (1 << CAN_IF2CRQ_MNUM_S);
-    while ((CAN1_IF2CRQ_R & CAN_IF2CRQ_BUSY) != 0) {} //polls until BUSY clears
 			
     LED2_ON(); //Turn on LED2 to indicate success
 
 }
 
-//A clarification on the Interface registers. IF1 is used for TX (CAN0) and IF2 is used for RX (CAN1). 
-//Setting up CAN0 for TX
-void CAN0_Transmit(Msg* message, uint32_t index) {
-
-    //Set up CAN0 for TX
-    CAN0_IF1CMSK_R = CAN_IF1CMSK_WRNRD | CAN_IF1CMSK_DATAA | CAN_IF1CMSK_DATAB | CAN_IF1CMSK_TXRQST; //Set the write not read bit to transfer the data from the interface registers specified by the MNUM in the command request
-		//The TXRQST bit is responsible for starting the transmission in this case
-
-    //add payload
-    CAN0_IF1DA1_R = (message[index].payload[0]) | (message[index].payload[1] << 8); //Low byte >> 8 OR High Byte << 8 - similar to the way we extracted at first 
-    CAN0_IF1DA2_R = (message[index].payload[2]) | (message[index].payload[3] << 8);
-    CAN0_IF1DB1_R = (message[index].payload[4]) | (message[index].payload[5] << 8);
-    CAN0_IF1DB2_R = (message[index].payload[6]) | (message[index].payload[7] << 8);
-		
-		CAN0_IF1CRQ_R = ((index + 1) << CAN_IF1CRQ_MNUM_S); //Message object index
-    while ((CAN0_IF1CRQ_R & CAN_IF1CRQ_BUSY) != 0) {} //polls until BUSY clears
-			
-		LED3_ON();
-
-}
-
 //Setting up CAN1 to receive and show the message object
-void CAN1_Receive(Msg* message) {
+void CAN1_IRQHandler(void) {
 		
-		while ((CAN1_NWDA1_R & (1 << CAN_NWDA1_NEWDAT_S)) == 0) {} //poll NEWDAT until a new frame is received. It is only received when the NEWDAT bit is set. 
-		CAN1_IF2CMSK_R &= ~CAN_IF2CMSK_WRNRD; //Set WRNRD bit to 0 to read. Transfer the data in the CANIF2 
-		CAN1_IF2CMSK_R |= CAN_IF2CMSK_ARB; //Set ARB (Access Arbitration Bits) bit to 1 to Transfer ID + DIR + XTD + MSGVAL of the message object into the Interface registers
-		CAN1_IF2CMSK_R |= CAN_IF2CMSK_CONTROL; //Set CONTROL bit to 1 to  Transfer control bits from the CANIFnMCTL register into the Interface registers.
-		CAN1_IF2CMSK_R |= CAN_IF2CMSK_DATAA;
-		CAN1_IF2CMSK_R |= CAN_IF2CMSK_DATAB;
-		CAN1_IF2CMSK_R |= CAN_IF2CMSK_CLRINTPND; //Set CLRINTPND bit to 1 to clear the interrupt pending bit for the message object
-		CAN1_IF2CMSK_R |= CAN_IF2CMSK_NEWDAT; //Set NEWDAT bit to 1 to transfer the new data received into the Interface registers
-		CAN1_IF2CRQ_R = (1 << CAN_IF2CRQ_MNUM_S); //write object number. 
-		while ((CAN1_IF2CRQ_R & CAN_IF2CRQ_BUSY) != 0) {} //polls until BUSY clears
+		uint32_t messageObject = CAN1_INT_R & CAN_INT_INTID_M; //extracts object number
+	
+		if (messageObject == 0x8000) {
+				//read the cansts register
+				uint32_t var = CAN1_STS_R; //the act of reading it clears the STS register
+		}
+	
+		else {
+		
+			//We need to check the message object. If it reaches 0, we leave the loop
+			while (messageObject > 0) {
+	
+				CAN1_IF2CMSK_R |= CAN_IF2CMSK_CLRINTPND; //Set CLRINTPND bit to 1 to clear the interrupt pending bit for the message object
+		
+				CAN1_IF2CMSK_R &= ~CAN_IF2CMSK_WRNRD; //Set WRNRD bit to 0 to read. Transfer the data in the CANIF2 
+				CAN1_IF2CMSK_R |= CAN_IF2CMSK_ARB; //Set ARB (Access Arbitration Bits) bit to 1 to Transfer ID + DIR + XTD + MSGVAL of the message object into the Interface registers
+				CAN1_IF2CMSK_R |= CAN_IF2CMSK_CONTROL; //Set CONTROL bit to 1 to  Transfer control bits from the CANIFnMCTL register into the Interface registers.
+				CAN1_IF2CMSK_R |= CAN_IF2CMSK_DATAA;
+				CAN1_IF2CMSK_R |= CAN_IF2CMSK_DATAB;
+				CAN1_IF2CMSK_R |= CAN_IF2CMSK_NEWDAT; //Set NEWDAT bit to 1 to transfer the new data received into the Interface registers
+		
+				CAN1_IF2CRQ_R = messageObject; //write object number. 
+				while ((CAN1_IF2CRQ_R & CAN_IF2CRQ_BUSY) != 0) {} //polls until BUSY clears
+			
+				uint32_t index = messageObject - 1; //Extracts the object number into a variable (index friendly)
 
-		message->canID = (CAN1_IF2ARB2_R >> 2) & 0x7FF; //get the message ID and save it to the struct field
-		message->DLC = CAN1_IF2MCTL_R & 0x0000000F; //extract the first 4 bits of the MCTL register to get the DLC (Data length code) - Supposed to be 8 bytes based on the transmit function
-		message->payload[0] = CAN1_IF2DA1_R & 0x00FF; //Low Byte (0x11)
-		message->payload[1] = (CAN1_IF2DA1_R >> 8) & 0xFF; //High Byte (0x00)
-		message->payload[2] = CAN1_IF2DA2_R & 0x00FF;
-		message->payload[3] = (CAN1_IF2DA2_R >> 8) & 0xFF;
-		message->payload[4] = CAN1_IF2DB1_R & 0x00FF;
-		message->payload[5] = (CAN1_IF2DB1_R >> 8) & 0xFF;
-		message->payload[6] = CAN1_IF2DB2_R & 0x00FF;
-		message->payload[7] = (CAN1_IF2DB2_R >> 8) & 0xFF;
-		message->timeStamp = ticks;
+				message[index].canID = (CAN1_IF2ARB2_R >> 2) & 0x7FF; //get the message ID and save it to the struct field
+				message[index].DLC = CAN1_IF2MCTL_R & 0x0000000F; //extract the first 4 bits of the MCTL register to get the DLC (Data length code) - Supposed to be 8 bytes based on the transmit function
+				message[index].payload[0] = CAN1_IF2DA1_R & 0x00FF; //Low Byte (0x11)
+				message[index].payload[1] = (CAN1_IF2DA1_R >> 8) & 0xFF; //High Byte (0x00)
+				message[index].payload[2] = CAN1_IF2DA2_R & 0x00FF;
+				message[index].payload[3] = (CAN1_IF2DA2_R >> 8) & 0xFF;
+				message[index].payload[4] = CAN1_IF2DB1_R & 0x00FF;
+				message[index].payload[5] = (CAN1_IF2DB1_R >> 8) & 0xFF;
+				message[index].payload[6] = CAN1_IF2DB2_R & 0x00FF;
+				message[index].payload[7] = (CAN1_IF2DB2_R >> 8) & 0xFF;
+				message[index].timeStamp = ticks;
+					
+				InterruptFlag |= (1 << index); //sets the specific bit of the bitmask to show which index to use in main
+				
+				messageObject = CAN1_INT_R & CAN_INT_INTID_M;
+	
+			}
+		}
 		
-		Message_Object_UART_Print(0, message);
+		return;
 			
 }

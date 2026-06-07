@@ -28,11 +28,17 @@ typedef enum {
 	COOLANT_TEMP
 } PROPERTY;
 
+volatile extern Msg message[NUMBER_OF_EVENTS];
+volatile extern uint32_t InterruptFlag; //This will be used as a bitmask -> 0x00000000 (8*4=32)
+
 void CAN0_Init(void);
 void CAN1_Init(void);
-void CAN0_Transmit(Msg* message, uint32_t index);
-void CAN1_Receive(Msg* message);
-void CAN_Message_Table_Init(Msg* msg);
-void CAN0_TX_Setup(Msg* msg);
+
+void CAN0_Transmit(volatile Msg* message, uint32_t index);
+
+void CAN_Message_Table_Init(volatile Msg* msg);
+
+void CAN0_TX_Setup(volatile Msg* msg);
+void CAN1_RX_Setup(volatile Msg* msg);
 
 #endif

@@ -6,7 +6,8 @@
 #include "can.h"
 #include "systick.h"
 
-Msg message[NUMBER_OF_EVENTS];
+volatile uint32_t InterruptFlag = 0;
+volatile Msg message[NUMBER_OF_EVENTS];
 
 int main(void) {
 
@@ -20,11 +21,17 @@ int main(void) {
 	CAN1_Init(); //Initialize CAN1 as RX
 	CAN_Message_Table_Init(message); 
 	CAN0_TX_Setup(message);
+	CAN1_RX_Setup(message);
 	while (1) {
+		
 		for (int i = 0; i < NUMBER_OF_EVENTS; i++) {
 			if (ticks - message[i].lastTransmitted >= message[i].period) {
 				CAN0_Transmit(message, i);
 				message[i].lastTransmitted += message[i].period;
+			}
+			if (InterruptFlag & (1 << i)) {
+				Message_Object_UART_Print(0, &message[i]); 
+				InterruptFlag &= ~(1 << i);
 			}
 		}
 	}
