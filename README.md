@@ -41,7 +41,7 @@ The physical bus uses a twisted-pair configuration to resolve electromagnetic in
 * `TXD`  -> MCU Pin PB1 (CAN1TX)
 * `RXD`  -> MCU Pin PB0 (CAN1RX)
 
-## Milestone 1 — TX/RX Proof of Life
+## Milestone 1: TX/RX Proof of Life
 
 The first integration milestone: a single CAN frame transmitted from CAN0, received by CAN1 across a physical two-node bus, and parsed out of the receiving message object. No CAN library used
 
@@ -56,7 +56,7 @@ The first integration milestone: a single CAN frame transmitted from CAN0, recei
 
 Milestone 1: Received CAN frame parsed into the Msg struct, shown in the debugger watch window
 
-## **Goal:** Stream live CAN traffic to a host PC using UART
+## Milestone 2: Stream live CAN traffic to a host PC using UART
 
 **Why UART2:** Enabling CAN0 (jumpers JP4/JP5) reassigns PA0/PA1 away from
 UART0, so per the board user guide UART2 (PD4/PD5) becomes the XDS-110
