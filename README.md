@@ -54,8 +54,6 @@ The first integration milestone: a single CAN frame transmitted from CAN0, recei
 
 ![alt text](image.png)
 
-Milestone 1: Received CAN frame parsed into the Msg struct, shown in the debugger watch window
-
 ## Milestone 2: Stream live CAN traffic to a host PC using UART
 
 **Why UART2:** Enabling CAN0 (jumpers JP4/JP5) reassigns PA0/PA1 away from
@@ -73,6 +71,20 @@ RX,0x100,8,0x11,0x00,0x22,0x00,0x33,0x00,0x44,0x00,0
 ```
 
 UART2 CAN trace in RealTerm![alt text](image-1.png)
+
+## Milestone 3: Multi-ECU Bus + Interrupt-Driven Monitor
+
+Simulate a realistic multi-ECU CAN bus and monitor it live. Four ECUs broadcasting on independent schedules. The node receiving every frame through interrupts and streaming it to UART on RealTerm
+
+**TX:** Sends four message objects at their own periods -> RPM (0x100, 500ms), throttle (0x200, 1s), speed (0x300, 2s), and coolant (0x400, 4s). Different CANIDs for all
+
+**RX:** CAN1 uses one message object per ID (we can do a total of 32) with receive interrupts enabled. The ISR (CAN1_IRQHandler) identifies the message object using CANINT, drains the pending objects using a loop, and hands it off to main using the flag bitmask. Main prints each frame using UART2 after checking if the specific bit of the flag bitmask is set. After printing, it clears that bit from flag.  
+
+![Multi-ECU trace in RealTerm](![alt text](image-2.png))
+
+> Design note: RX is interrupt-driven so the monitor never stalls the TX
+> scheduler and never misses a frame; the ISR stays short (capture only),
+> with the UART print moved to main (slower than the ISR in general)
 
 ## The Intrusion Detection System (IDS)
 (Planned)
