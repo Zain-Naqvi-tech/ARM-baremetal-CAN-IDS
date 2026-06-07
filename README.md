@@ -80,7 +80,7 @@ Simulate a realistic multi-ECU CAN bus and monitor it live. Four ECUs broadcasti
 
 **RX:** CAN1 uses one message object per ID (we can do a total of 32) with receive interrupts enabled. The ISR (CAN1_IRQHandler) identifies the message object using CANINT, drains the pending objects using a loop, and hands it off to main using the flag bitmask. Main prints each frame using UART2 after checking if the specific bit of the flag bitmask is set. After printing, it clears that bit from flag.  
 
-![Multi-ECU trace in RealTerm](![alt text](image-2.png))
+Multi-ECU trace in RealTerm![alt text](image-2.png)
 
 > Design note: RX is interrupt-driven so the monitor never stalls the TX
 > scheduler and never misses a frame; the ISR stays short (capture only),
