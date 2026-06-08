@@ -87,11 +87,16 @@ Multi-ECU trace in RealTerm![alt text](image-2.png)
 > with the UART print moved to main (slower than the ISR in general)
 
 ## The Intrusion Detection System (IDS)
-(Planned)
-Running concurrently on the same Cortex-M4 core is a lightweight, custom-built Intrusion Detection System. It actively monitors the raw bus traffic at the hardware level to detect and flag common automotive cybersecurity threats, including:
-* **Timing Violations:** Detecting messages sent outside their expected frequency windows.
+Running concurrently on the same Cortex-M4 core is a lightweight, custom-built Intrusion Detection System. It actively monitors the raw bus traffic to detect and flag common automotive cybersecurity threats and anomalies, including:
+* **Timing Violations:** Detecting messages sent outside their expected timing windows.
 * **Unexpected Message IDs:** Flagging unauthorized or unknown device IDs attempting to transmit on the bus.
-* **Value Spoofing:** Identifying physically impossible data jumps (e.g., an instant spike from 0 to 100% throttle).
+* **Value Spoofing:** Identifying impossible (or out of range) values for certain properties such as RPM, Vehicle Speed, Throttle, and Coolant Temperature. 
+
+Value Spoofing: Complete
+Every property has been given a maximum value. Anything over this value would be an anomaly. Every message struct has also been given a status which is used for UART printing.  `ENGINE_RPM` is set to 6500 (0x1964 in payload array) which is GREATER than the maximum threshold value of 6000 
+The rest have a payload under their maxValue threshold. We expect the RPM status to be 'OVER_RANGE' and the rest to be 'OK'
+
+UART output testing message status ![alt text](image-3.png)
 
 ## Traffic Visualization
 (Planned)
