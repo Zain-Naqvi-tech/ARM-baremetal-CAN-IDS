@@ -11,6 +11,14 @@
 #define DB1 0x33
 #define DB2 0x44
 
+typedef enum {
+	OK,
+	MISSING, //also acts as too slow to an extent 
+	TOO_FAST,
+	OVER_RANGE,
+	UNKNOWN_ID
+} ERROR_STATUS;
+
 typedef struct {
 	uint16_t canID; //Event specific ID
   uint8_t DLC; //Data Length Code
@@ -19,6 +27,8 @@ typedef struct {
   uint32_t timeStamp; //Number of ticks that have taken place since the system started working
 	uint32_t lastTransmitted; //This is the last time the message for this event was transmitted
 	uint32_t period; //This is the time it takes for this particular event to send a message
+	ERROR_STATUS status; //This indicates the error status
+	uint16_t maxValue;
 } Msg;
 
 typedef enum {

@@ -19,9 +19,9 @@ int main(void) {
 	PortF_Init(); //Initialize Port F
 	CAN0_Init(); //Initialize CAN0 as TX
 	CAN1_Init(); //Initialize CAN1 as RX
-	CAN_Message_Table_Init(message); 
-	CAN0_TX_Setup(message);
-	CAN1_RX_Setup(message);
+	CAN_Message_Table_Init(message); //Set up the table which initializes all the event's message structs seperately
+	CAN0_TX_Setup(message); //Conducts a one-time initialization for the registers responsible for TX
+	CAN1_RX_Setup(message); //Conducts a one-time initialization for the registers responsible for RX
 	while (1) {
 		
 		for (int i = 0; i < NUMBER_OF_EVENTS; i++) {

@@ -76,6 +76,29 @@ void UART_Init(void) {
 			sprintf(printf_buffer, "0x%02X,", message->payload[i]);
 			UART_printf(printf_buffer);
 		}
+		switch (message->status)
+		{
+		case OK:
+			UART_printf("OK,");
+			break;
+		
+		case MISSING:
+			UART_printf("MISSING,");
+			break;
+
+		case TOO_FAST:
+			UART_printf("TOO_FAST,");
+			break;
+
+		case OVER_RANGE:
+			UART_printf("OVER_RANGE,");
+			break;
+		
+		case UNKNOWN_ID:
+			UART_printf("UNKNOWN_ID,");
+			break;
+
+		}
 		sprintf(printf_buffer, "%d\r\n", message->timeStamp);
 		UART_printf(printf_buffer);
 		

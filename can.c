@@ -15,6 +15,7 @@ void CAN_Message_Table_Init(volatile Msg* msg) {
 		msg[ENGINE_RPM].lastTransmitted = 0;
 		msg[ENGINE_RPM].overrunFlag = 0;
 		msg[ENGINE_RPM].timeStamp = 0;
+		msg[ENGINE_RPM].maxValue = 6000; //Maximum allowed RPM
 		for (int i = 0; i < msg[ENGINE_RPM].DLC; i++) {
 			msg[ENGINE_RPM].payload[i] = 0x10 + i;
 			}
@@ -26,6 +27,7 @@ void CAN_Message_Table_Init(volatile Msg* msg) {
     msg[THROTTLE].lastTransmitted = 0;
     msg[THROTTLE].overrunFlag = 0;
     msg[THROTTLE].timeStamp = 0;
+		msg[THROTTLE].maxValue = 100; //100 percent throttle is the maximum limit
     for (int i = 0; i < msg[THROTTLE].DLC; i++) {
         msg[THROTTLE].payload[i] = 0x20 + i;
     }
@@ -37,6 +39,7 @@ void CAN_Message_Table_Init(volatile Msg* msg) {
     msg[VEHICLE_SPEED].lastTransmitted = 0;
     msg[VEHICLE_SPEED].overrunFlag = 0;
     msg[VEHICLE_SPEED].timeStamp = 0;
+		msg[VEHICLE_SPEED].maxValue = 255; //km per hour
     for (int i = 0; i < msg[VEHICLE_SPEED].DLC; i++) {
         msg[VEHICLE_SPEED].payload[i] = 0x30 + i;
     }
@@ -48,6 +51,7 @@ void CAN_Message_Table_Init(volatile Msg* msg) {
     msg[COOLANT_TEMP].lastTransmitted = 0;
     msg[COOLANT_TEMP].overrunFlag = 0;
     msg[COOLANT_TEMP].timeStamp = 0;
+		msg[COOLANT_TEMP].maxValue = 120; //Celcius
     for (int i = 0; i < msg[COOLANT_TEMP].DLC; i++) {
         msg[COOLANT_TEMP].payload[i] = 0x40 + i;
     }
@@ -169,7 +173,7 @@ void CAN1_Init(void) {
 
 }
 
-//Setting up CAN1 to receive and show the message object
+//Setting up CAN1 Interrupt Service Routine to receive and pass the message object forward
 void CAN1_IRQHandler(void) {
 		
 		uint32_t messageObject = CAN1_INT_R & CAN_INT_INTID_M; //extracts object number
@@ -200,8 +204,8 @@ void CAN1_IRQHandler(void) {
 
 				message[index].canID = (CAN1_IF2ARB2_R >> 2) & 0x7FF; //get the message ID and save it to the struct field
 				message[index].DLC = CAN1_IF2MCTL_R & 0x0000000F; //extract the first 4 bits of the MCTL register to get the DLC (Data length code) - Supposed to be 8 bytes based on the transmit function
-				message[index].payload[0] = CAN1_IF2DA1_R & 0x00FF; //Low Byte (0x11)
-				message[index].payload[1] = (CAN1_IF2DA1_R >> 8) & 0xFF; //High Byte (0x00)
+				message[index].payload[0] = CAN1_IF2DA1_R & 0x00FF; //Low Byte
+				message[index].payload[1] = (CAN1_IF2DA1_R >> 8) & 0xFF; //High Byte
 				message[index].payload[2] = CAN1_IF2DA2_R & 0x00FF;
 				message[index].payload[3] = (CAN1_IF2DA2_R >> 8) & 0xFF;
 				message[index].payload[4] = CAN1_IF2DB1_R & 0x00FF;
@@ -209,6 +213,15 @@ void CAN1_IRQHandler(void) {
 				message[index].payload[6] = CAN1_IF2DB2_R & 0x00FF;
 				message[index].payload[7] = (CAN1_IF2DB2_R >> 8) & 0xFF;
 				message[index].timeStamp = ticks;
+					
+				uint16_t payloadValue = message[index].payload[0] << 8| message[index].payload[1];
+					
+				if (payloadValue >= message[index].maxValue) {
+					message[index].status = OVER_RANGE;
+				}
+                else {
+                    message[index].status = OK;
+                }
 					
 				InterruptFlag |= (1 << index); //sets the specific bit of the bitmask to show which index to use in main
 				
