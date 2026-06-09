@@ -13,7 +13,7 @@
 
 typedef enum {
 	OK,
-	MISSING, //also acts as too slow to an extent 
+	MISSING, //also acts as too slow 
 	TOO_FAST,
 	OVER_RANGE,
 	UNKNOWN_ID
@@ -29,6 +29,9 @@ typedef struct {
 	uint32_t period; //This is the time it takes for this particular event to send a message
 	ERROR_STATUS status; //This indicates the error status
 	uint16_t maxValue;
+	uint32_t lastArrived; //This is the last time the message for this event was received - used to determine if a message is missing or not
+	uint32_t valueMargin; //This is a margin 
+	uint32_t arrivalFlag; //This flag is checked before timing checks. If the flag is zero, it means that this was the first arrival and the too fast/too slow does not matter
 } Msg;
 
 typedef enum {

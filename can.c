@@ -8,54 +8,66 @@
 
 void CAN_Message_Table_Init(volatile Msg* msg) {
 
-		//Populating the simulated ENGINE RPM Message object
-		msg[ENGINE_RPM].canID = 0x100;
-		msg[ENGINE_RPM].period = 500; //500ms of difference between each message transmission
-		msg[ENGINE_RPM].DLC = 8;
-		msg[ENGINE_RPM].lastTransmitted = 0;
-		msg[ENGINE_RPM].overrunFlag = 0;
-		msg[ENGINE_RPM].timeStamp = 0;
-		msg[ENGINE_RPM].maxValue = 6000; //Maximum allowed RPM
-	
-		//Test RPM value of 6500 (0x1964)
-		msg[ENGINE_RPM].payload[0] = 0x19; //Set value for RPM Test
-		msg[ENGINE_RPM].payload[1] = 0x64; //Set value for RPM Test
+        //Populating the simulated ENGINE RPM Message object
+        msg[ENGINE_RPM].canID = 0x100;
+        msg[ENGINE_RPM].period = 500; //500ms of difference between each message transmission
+        msg[ENGINE_RPM].DLC = 8;
+        msg[ENGINE_RPM].lastTransmitted = 0;
+        msg[ENGINE_RPM].overrunFlag = 0;
+        msg[ENGINE_RPM].timeStamp = 0;
+        msg[ENGINE_RPM].maxValue = 6000; //Maximum allowed RPM
+        msg[ENGINE_RPM].valueMargin = 200; //Allowed margin of error 
+        msg[ENGINE_RPM].arrivalFlag = 0;
+        msg[ENGINE_RPM].lastArrived = 0;
+    
+        //Test RPM value of 6500 (0x1964)
+        msg[ENGINE_RPM].payload[0] = 0x19; //Set value for RPM Test
+        msg[ENGINE_RPM].payload[1] = 0x64; //Set value for RPM Test
 		
 		//Populating the simulated THROTTLE Message object
 		msg[THROTTLE].canID = 0x200;
-    msg[THROTTLE].period = 1000; //1000ms of difference between each message transmission
-    msg[THROTTLE].DLC = 8;
-    msg[THROTTLE].lastTransmitted = 0;
-    msg[THROTTLE].overrunFlag = 0;
-    msg[THROTTLE].timeStamp = 0;
+        msg[THROTTLE].period = 1000; //1000ms of difference between each message transmission
+        msg[THROTTLE].DLC = 8;
+        msg[THROTTLE].lastTransmitted = 0;
+        msg[THROTTLE].overrunFlag = 0;
+        msg[THROTTLE].timeStamp = 0;
 		msg[THROTTLE].maxValue = 100; //100 percent throttle is the maximum limit
-    for (int i = 0; i < msg[THROTTLE].DLC; i++) {
-        msg[THROTTLE].payload[i] = 0;
-    }
+		msg[THROTTLE].valueMargin = 5; //Allowed margin of error
+        msg[THROTTLE].arrivalFlag = 0;
+        msg[THROTTLE].lastArrived = 0;
+        for (int i = 0; i < msg[THROTTLE].DLC; i++) {
+            msg[THROTTLE].payload[i] = 0;
+        }
 
-    //Populating the simulated VEHICLE SPEED Message object
-    msg[VEHICLE_SPEED].canID = 0x300;
-    msg[VEHICLE_SPEED].period = 2000; //2000ms of difference between each message transmission
-    msg[VEHICLE_SPEED].DLC = 8;
-    msg[VEHICLE_SPEED].lastTransmitted = 0;
-    msg[VEHICLE_SPEED].overrunFlag = 0;
-    msg[VEHICLE_SPEED].timeStamp = 0;
+        //Populating the simulated VEHICLE SPEED Message object
+        msg[VEHICLE_SPEED].canID = 0x300;
+        msg[VEHICLE_SPEED].period = 2000; //2000ms of difference between each message transmission
+        msg[VEHICLE_SPEED].DLC = 8;
+        msg[VEHICLE_SPEED].lastTransmitted = 0;
+        msg[VEHICLE_SPEED].overrunFlag = 0;
+        msg[VEHICLE_SPEED].timeStamp = 0;
 		msg[VEHICLE_SPEED].maxValue = 255; //km per hour
-    for (int i = 0; i < msg[VEHICLE_SPEED].DLC; i++) {
-        msg[VEHICLE_SPEED].payload[i] = 0;
-    }
+		msg[VEHICLE_SPEED].valueMargin = 20; //Allowed margin of error
+        msg[VEHICLE_SPEED].arrivalFlag = 0;
+        msg[VEHICLE_SPEED].lastArrived = 0;
+        for (int i = 0; i < msg[VEHICLE_SPEED].DLC; i++) {
+            msg[VEHICLE_SPEED].payload[i] = 0;
+        }
 
-    //Populating the simulated COOLANT TEMP Message object
-    msg[COOLANT_TEMP].canID = 0x400;
-    msg[COOLANT_TEMP].period = 4000; //4000ms of difference between each message transmission
-    msg[COOLANT_TEMP].DLC = 8;
-    msg[COOLANT_TEMP].lastTransmitted = 0;
-    msg[COOLANT_TEMP].overrunFlag = 0;
-    msg[COOLANT_TEMP].timeStamp = 0;
-		msg[COOLANT_TEMP].maxValue = 120; //Celcius
-    for (int i = 0; i < msg[COOLANT_TEMP].DLC; i++) {
-        msg[COOLANT_TEMP].payload[i] = 0;
-    }
+        //Populating the simulated COOLANT TEMP Message object
+        msg[COOLANT_TEMP].canID = 0x400;
+        msg[COOLANT_TEMP].period = 4000; //4000ms of difference between each message transmission
+        msg[COOLANT_TEMP].DLC = 8;
+        msg[COOLANT_TEMP].lastTransmitted = 0;
+        msg[COOLANT_TEMP].overrunFlag = 0;
+        msg[COOLANT_TEMP].timeStamp = 0;
+        msg[COOLANT_TEMP].maxValue = 120; //Celcius
+        msg[COOLANT_TEMP].valueMargin = 20; //Allowed margin of error
+        msg[COOLANT_TEMP].arrivalFlag = 0;
+        msg[COOLANT_TEMP].lastArrived = 0;
+        for (int i = 0; i < msg[COOLANT_TEMP].DLC; i++) {
+            msg[COOLANT_TEMP].payload[i] = 0;
+        }
 		
 }
 

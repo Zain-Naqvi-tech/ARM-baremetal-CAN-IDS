@@ -97,7 +97,11 @@ void UART_Init(void) {
 		case UNKNOWN_ID:
 			UART_printf("UNKNOWN_ID,");
 			break;
-
+		
+		deafult:
+			UART_printf("OK,");
+			break;
+			
 		}
 		sprintf(printf_buffer, "%d\r\n", message->timeStamp);
 		UART_printf(printf_buffer);

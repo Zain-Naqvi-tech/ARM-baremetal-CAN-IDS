@@ -5,6 +5,7 @@
 #include "gpio.h"
 #include "can.h"
 #include "systick.h"
+#include "msp432e401y.h"
 
 volatile uint32_t InterruptFlag = 0;
 volatile Msg message[NUMBER_OF_EVENTS];
@@ -29,9 +30,48 @@ int main(void) {
 				CAN0_Transmit(message, i);
 				message[i].lastTransmitted += message[i].period;
 			}
+
 			if (InterruptFlag & (1 << i)) {
-				Message_Object_UART_Print(0, &message[i]); 
-				InterruptFlag &= ~(1 << i);
+				
+				uint32_t delta = ticks - message[i].lastArrived; //Finds the difference between the current time and the last time 
+				
+				if (message[i].arrivalFlag == 0) {
+					Message_Object_UART_Print(0, &message[i]); 
+					message[i].arrivalFlag = 1;
+					message[i].lastArrived = ticks;
+					
+					__disable_irq();
+					InterruptFlag &= ~(1 << i);
+					__enable_irq();
+				}
+				
+				else {
+				
+					if (delta < message[i].period - message[i].valueMargin) //Too fast
+					{
+						message[i].status = TOO_FAST;
+					}
+					
+					Message_Object_UART_Print(0, &message[i]); 
+					message[i].lastArrived = ticks;
+					
+					//We need to disable interrupts for a read-modify-write sequence in order to ensure we do not miss any messages
+					__disable_irq();
+					InterruptFlag &= ~(1 << i);
+					__enable_irq();
+				
+				}
+ 				
+			}
+
+			//Watchdog which runs on the events that have already been received once and periodically checks if they are even arriving (and on time)
+			if (message[i].arrivalFlag == 1) {
+				uint32_t delta = ticks - message[i].lastArrived;
+				if (delta > message[i].period + message[i].valueMargin) { //Slow or MISSING
+					message[i].status = MISSING;
+					Message_Object_UART_Print(0, &message[i]);
+					message[i].arrivalFlag = 0; //Resets the arrival flag to check for the next arrival
+				}
 			}
 		}
 	}
