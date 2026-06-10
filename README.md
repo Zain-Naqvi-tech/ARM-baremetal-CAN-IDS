@@ -90,13 +90,27 @@ Multi-ECU trace in RealTerm![alt text](image-2.png)
 Running concurrently on the same Cortex-M4 core is a lightweight, custom-built Intrusion Detection System. It actively monitors the raw bus traffic to detect and flag common automotive cybersecurity threats and anomalies, including:
 * **Timing Violations:** Detecting messages sent outside their expected timing windows.
 * **Unexpected Message IDs:** Flagging unauthorized or unknown device IDs attempting to transmit on the bus.
-* **Value Spoofing:** Identifying impossible (or out of range) values for certain properties such as RPM, Vehicle Speed, Throttle, and Coolant Temperature. 
+* **Value Check:** Identifying impossible (or out of range) values for certain properties such as RPM, Vehicle Speed, Throttle, and Coolant Temperature. 
 
-Value Spoofing: Complete
+## Test — OVER_RANGE Detection (Value Check)
 Every property has been given a maximum value. Anything over this value would be an anomaly. Every message struct has also been given a status which is used for UART printing.  `ENGINE_RPM` is set to 6500 (0x1964 in payload array) which is GREATER than the maximum threshold value of 6000 
 The rest have a payload under their maxValue threshold. We expect the RPM status to be 'OVER_RANGE' and the rest to be 'OK'
 
 UART output testing message status ![alt text](image-3.png)
+
+## Test — TOO_FAST Detection (Frame Injection)
+
+The IDS flags a message arriving faster than its defined period
+
+**Setup:** an attacker block injects an extra throttle frame (ID 0x200) every 1600 ms, off the event's normal 1000 ms schedule. The legit throttle ECU keeps its own rhythm untouched.
+
+![TOO_FAST detection in RealTerm](docs/images/too_fast_detection.png)
+
+**Mistakes on the way here:**
+- Tried injecting with a blocking delay loop. This only froze the scheduler and shifted every timestamp, because `ticks` runs in hardware regardless of a busy-wait. *Lesson: inject traffic, not delays.*
+- First attacker block fired on the loop index and flooded every message. *Lesson: target one specific victim.*
+
+A design choice was made here: To account for jitter such as arbitration delays for lower-priority CAN IDs (it can be seen for 0x400 that it arrives 1ms later than the rest due to the scheduling), the IDS has not been hardcoded to say that a normal send on the right time is OK even though it was only flagged TOO_FAST due to an earlier attacking send which was TOO_FAST itself. 
 
 ## Traffic Visualization
 (Planned)
