@@ -16,7 +16,7 @@ void CAN_Message_Table_Init(volatile Msg* msg) {
         msg[ENGINE_RPM].overrunFlag = 0;
         msg[ENGINE_RPM].timeStamp = 0;
         msg[ENGINE_RPM].maxValue = 6000; //Maximum allowed RPM
-        msg[ENGINE_RPM].valueMargin = 200; //Allowed margin of error 
+        msg[ENGINE_RPM].valueMargin = 20; //Allowed margin of error for the timing (20ms)
         msg[ENGINE_RPM].arrivalFlag = 0;
         msg[ENGINE_RPM].lastArrived = 0;
     
@@ -32,7 +32,7 @@ void CAN_Message_Table_Init(volatile Msg* msg) {
         msg[THROTTLE].overrunFlag = 0;
         msg[THROTTLE].timeStamp = 0;
 		msg[THROTTLE].maxValue = 100; //100 percent throttle is the maximum limit
-		msg[THROTTLE].valueMargin = 5; //Allowed margin of error
+		msg[THROTTLE].valueMargin = 100; //Allowed margin of error for the timing (100ms)
         msg[THROTTLE].arrivalFlag = 0;
         msg[THROTTLE].lastArrived = 0;
         for (int i = 0; i < msg[THROTTLE].DLC; i++) {
@@ -47,7 +47,7 @@ void CAN_Message_Table_Init(volatile Msg* msg) {
         msg[VEHICLE_SPEED].overrunFlag = 0;
         msg[VEHICLE_SPEED].timeStamp = 0;
 		msg[VEHICLE_SPEED].maxValue = 255; //km per hour
-		msg[VEHICLE_SPEED].valueMargin = 20; //Allowed margin of error
+		msg[VEHICLE_SPEED].valueMargin = 200; //Allowed margin of error for timing (200ms)	
         msg[VEHICLE_SPEED].arrivalFlag = 0;
         msg[VEHICLE_SPEED].lastArrived = 0;
         for (int i = 0; i < msg[VEHICLE_SPEED].DLC; i++) {
@@ -62,7 +62,7 @@ void CAN_Message_Table_Init(volatile Msg* msg) {
         msg[COOLANT_TEMP].overrunFlag = 0;
         msg[COOLANT_TEMP].timeStamp = 0;
         msg[COOLANT_TEMP].maxValue = 120; //Celcius
-        msg[COOLANT_TEMP].valueMargin = 20; //Allowed margin of error
+        msg[COOLANT_TEMP].valueMargin = 400; //Allowed margin of error for timing (400ms)
         msg[COOLANT_TEMP].arrivalFlag = 0;
         msg[COOLANT_TEMP].lastArrived = 0;
         for (int i = 0; i < msg[COOLANT_TEMP].DLC; i++) {

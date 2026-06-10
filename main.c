@@ -10,6 +10,8 @@
 volatile uint32_t InterruptFlag = 0;
 volatile Msg message[NUMBER_OF_EVENTS];
 
+volatile uint32_t attackerTime = 0 ;
+
 int main(void) {
 
 	PLL_Init(); //Sets the clock speed at 120MHz
@@ -29,6 +31,12 @@ int main(void) {
 			if (ticks - message[i].lastTransmitted >= message[i].period) {
 				CAN0_Transmit(message, i);
 				message[i].lastTransmitted += message[i].period;
+			}
+			
+			//THIS IS WHERE THE ATTACKER WORKS
+			if (ticks - attackerTime >= 1600) {
+				CAN0_Transmit(message, 1);
+				attackerTime += 1600;
 			}
 
 			if (InterruptFlag & (1 << i)) {
@@ -52,8 +60,8 @@ int main(void) {
 						message[i].status = TOO_FAST;
 					}
 					
-					Message_Object_UART_Print(0, &message[i]); 
 					message[i].lastArrived = ticks;
+					Message_Object_UART_Print(0, &message[i]); 
 					
 					//We need to disable interrupts for a read-modify-write sequence in order to ensure we do not miss any messages
 					__disable_irq();
