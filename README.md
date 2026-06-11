@@ -112,6 +112,26 @@ The IDS flags a message arriving faster than its defined period
 
 A design choice was made here: To account for jitter such as arbitration delays for lower-priority CAN IDs (it can be seen for 0x400 that it arrives 1ms later than the rest due to the scheduling), the IDS has not been hardcoded to say that a normal send on the right time is OK even though it was only flagged TOO_FAST due to an earlier attacking send which was TOO_FAST itself. 
 
+## Test — MISSING Detection (Silencing an event for a specific time period)
+
+The IDS flags a message that *stops arriving*. A dropped, disconnected, or attacker-silenced node.
+
+**Setup:**  suppress a victim's transmissions for a window. I target
+VEHICLE_SPEED (2 s period), silencing it from t=2.5 s to t=4.5 s so it misses its
+4 s slot, then recovers.
+
+![MISSING detection in RealTerm](image-5.png)
+
+**How I got here (and what I learned):**
+- First tried to fake it with delays and disabled-interrupt tricks, all failed,
+  because `ticks` runs in hardware and a busy-wait just freezes the scheduler.
+  Realized (same lesson as TOO_FAST) you inject by changing *traffic*, not *time*. We can work
+  here by *removing* a transmission rather than adding one.
+- Initially buried the logic inside `CAN0_Transmit` with an early
+  `return` if the time period was met. It worked but was working on the BUS side in a CAN function. Wanted to move it to main, so had to use abstraction.
+
+SPEED is flagged MISSING exactly once on the edge, stays silent, then re-arms and returns to OK when it resumes at 6 s. Makes the full trip
+
 ## Traffic Visualization
 (Planned)
 The firmware will interface with a custom Python dashboard that visualizes the live bus traffic over a serial connection. It will log standard telemetry while instantly flagging network anomalies and spoofing attempts in real time.

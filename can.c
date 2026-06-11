@@ -19,10 +19,9 @@ void CAN_Message_Table_Init(volatile Msg* msg) {
         msg[ENGINE_RPM].valueMargin = 20; //Allowed margin of error for the timing (20ms)
         msg[ENGINE_RPM].arrivalFlag = 0;
         msg[ENGINE_RPM].lastArrived = 0;
-    
-        //Test RPM value of 6500 (0x1964)
-        msg[ENGINE_RPM].payload[0] = 0x19; //Set value for RPM Test
-        msg[ENGINE_RPM].payload[1] = 0x64; //Set value for RPM Test
+        for (int i = 0; i < msg[ENGINE_RPM].DLC; i++) {
+					msg[ENGINE_RPM].payload[i] = 0;
+        }
 		
 		//Populating the simulated THROTTLE Message object
 		msg[THROTTLE].canID = 0x200;

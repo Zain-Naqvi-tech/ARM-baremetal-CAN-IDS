@@ -6,12 +6,14 @@
 #include "can.h"
 #include "systick.h"
 #include "msp432e401y.h"
+#include "attacker.h"
 
 volatile uint32_t InterruptFlag = 0;
 volatile Msg message[NUMBER_OF_EVENTS];
 
-volatile uint32_t attackerTime_F = 0 ;
-volatile uint32_t attackerTime_M = 0;
+volatile uint32_t attackerTime = 0 ;
+
+bool suppressed;
 
 int main(void) {
 
@@ -28,24 +30,20 @@ int main(void) {
 	CAN1_RX_Setup(message); //Conducts a one-time initialization for the registers responsible for RX
 	while (1) {
 		
+		INJECT_OVER_RANGE(message, 0); //Injecting over_range values for ENGINE_RPM
+		INJECT_TOO_FAST(message, 1, &attackerTime);
+		
 		for (int i = 0; i < NUMBER_OF_EVENTS; i++) {
 			if (ticks - message[i].lastTransmitted >= message[i].period) {
-				CAN0_Transmit(message, i);
-				message[i].lastTransmitted += message[i].period;
-			}
-						
-			//THIS IS WHERE THE ATTACKER WORKS FOR TOO_FAST
-			if (ticks - attackerTime_F >= 1600) {
-				CAN0_Transmit(message, 1); //attacks the bus with the THROTTLE message every 1600 ms
-				attackerTime_F += 1600;
-			}
-			//ATTACKER ENDS FOR TOO_FAST
-			
-			//THIS IS WHERE THE ATTACKER WORKS FOR MISSING
-			if (ticks - attackerTime_M >= 5000) {
+				suppressed = INJECT_MISSING(2500, 4500, i);
+				if (!suppressed) {
+					CAN0_Transmit(message, i);
+				}
 				
+				message[i].lastTransmitted += message[i].period;
+			
 			}
-
+			
 			if (InterruptFlag & (1 << i)) {
 				
 				uint32_t delta = ticks - message[i].lastArrived; //Finds the difference between the current time and the last time 
@@ -84,6 +82,7 @@ int main(void) {
 				uint32_t delta = ticks - message[i].lastArrived;
 				if (delta > message[i].period + message[i].valueMargin) { //Slow or MISSING
 					message[i].status = MISSING;
+					message[i].timeStamp += message[i].period;
 					Message_Object_UART_Print(0, &message[i]);
 					message[i].arrivalFlag = 0; //Resets the arrival flag to check for the next arrival
 				}
