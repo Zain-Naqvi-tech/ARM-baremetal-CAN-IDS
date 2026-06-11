@@ -104,7 +104,7 @@ The IDS flags a message arriving faster than its defined period
 
 **Setup:** an attacker block injects an extra throttle frame (ID 0x200) every 1600 ms, off the event's normal 1000 ms schedule. The legit throttle ECU keeps its own rhythm untouched.
 
-![TOO_FAST detection in RealTerm](docs/images/too_fast_detection.png)
+![TOO_FAST detection in RealTerm](image-4.png)
 
 **Mistakes on the way here:**
 - Tried injecting with a blocking delay loop. This only froze the scheduler and shifted every timestamp, because `ticks` runs in hardware regardless of a busy-wait. *Lesson: inject traffic, not delays.*

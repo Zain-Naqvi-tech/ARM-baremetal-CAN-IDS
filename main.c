@@ -10,7 +10,8 @@
 volatile uint32_t InterruptFlag = 0;
 volatile Msg message[NUMBER_OF_EVENTS];
 
-volatile uint32_t attackerTime = 0 ;
+volatile uint32_t attackerTime_F = 0 ;
+volatile uint32_t attackerTime_M = 0;
 
 int main(void) {
 
@@ -32,11 +33,17 @@ int main(void) {
 				CAN0_Transmit(message, i);
 				message[i].lastTransmitted += message[i].period;
 			}
+						
+			//THIS IS WHERE THE ATTACKER WORKS FOR TOO_FAST
+			if (ticks - attackerTime_F >= 1600) {
+				CAN0_Transmit(message, 1); //attacks the bus with the THROTTLE message every 1600 ms
+				attackerTime_F += 1600;
+			}
+			//ATTACKER ENDS FOR TOO_FAST
 			
-			//THIS IS WHERE THE ATTACKER WORKS
-			if (ticks - attackerTime >= 1600) {
-				CAN0_Transmit(message, 1);
-				attackerTime += 1600;
+			//THIS IS WHERE THE ATTACKER WORKS FOR MISSING
+			if (ticks - attackerTime_M >= 5000) {
+				
 			}
 
 			if (InterruptFlag & (1 << i)) {
