@@ -132,7 +132,7 @@ VEHICLE_SPEED (2 s period), silencing it from t=2.5 s to t=4.5 s so it misses it
 
 SPEED is flagged MISSING exactly once on the edge, stays silent, then re-arms and returns to OK when it resumes at 6 s. Makes the full trip
 
-## Detecting Unknown IDs (Promiscuous)
+## Test — Detecting Unknown IDs (Promiscuous)
 
 A frame shows up with an ID that isn't supposed to be on the bus at all is being flagged by the IDS in this case
 
