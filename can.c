@@ -82,6 +82,13 @@ void CAN0_TX_Setup(volatile Msg* msg) {
 			while ((CAN0_IF1CRQ_R & CAN_IF1CRQ_BUSY) != 0) {} //polls until BUSY clears
 			
 		}
+		
+		CAN0_IF1CMSK_R = CAN_IF1CMSK_WRNRD | CAN_IF1CMSK_ARB | CAN_IF1CMSK_CONTROL; //Setting the WRNRD, ARB, and CONTROL bits as a one-time assignment. The XTD bit is cleared so we know it is 11-bit
+		CAN0_IF1ARB2_R = (0x500 << 2) | CAN_IF1ARB2_MSGVAL | CAN_IF1ARB2_DIR; //This puts the specific CANID in the Arbitration register. It also enables transmission and is ready to be considered by the message handler
+		CAN0_IF1MCTL_R = message[4].DLC | CAN_IF1MCTL_EOB; //Indicates end of buffer and configures the DLC of the specific event
+	
+		CAN0_IF1CRQ_R = ((4 + 1) << CAN_IF1CRQ_MNUM_S); //Message object (index + 1)
+		while ((CAN0_IF1CRQ_R & CAN_IF1CRQ_BUSY) != 0) {} //polls until BUSY clears
 			
 }
 
@@ -137,7 +144,7 @@ void CAN1_RX_Setup(volatile Msg* msg) {
 	
 		for (int i = 0; i < NUMBER_OF_EVENTS; i++) {
 	
-			CAN1_IF2CMSK_R = CAN_IF2CMSK_WRNRD | CAN_IF2CMSK_ARB | CAN_IF2CMSK_CONTROL; //Set WRNRD bit to 0 to read. Transfer the data in the CANIF2. Set ARB (Access Arbitration Bits) bit to 1 to Transfer ID + DIR + XTD + MSGVAL of the message object into the Interface registers. //Set CONTROL bit to 1 to  Transfer control bits from the CANIFnMCTL register into the Interface registers.
+			CAN1_IF2CMSK_R = CAN_IF2CMSK_WRNRD | CAN_IF2CMSK_ARB | CAN_IF2CMSK_CONTROL; //Set WRNRD bit to transfer the data in the interface register to the CAN message object in the Command Request Register. Transfer the data in the CANIF2. Set ARB (Access Arbitration Bits) bit to 1 to Transfer ID + DIR + XTD + MSGVAL of the message object into the Interface registers. Set CONTROL bit to 1 to  Transfer control bits from the CANIFnMCTL register into the Interface registers.
 			CAN1_IF2ARB2_R = CAN_IF2ARB2_MSGVAL | (msg[i].canID << 2); //Set the MSGVAL bit to 1 to show that the message is valid. Shift CANID left by two spaces to ensure that it lands in bits [2:12] of the ARB2 register
 			CAN1_IF2MCTL_R = 0x08 | CAN_IF2MCTL_EOB | CAN_IF2MCTL_RXIE; //Set the DLC value (8 bytes). Set EOB to show end of buffer. Set the receive interrupt enable bit
 			//This also keeps the TXRQST bit clear to prevent a remote frame transmission
@@ -147,6 +154,21 @@ void CAN1_RX_Setup(volatile Msg* msg) {
 			while ((CAN1_IF2CRQ_R & CAN_IF2CRQ_BUSY) != 0) {} //polls until BUSY clears
 				
 		}
+		
+			//OBJECT 5
+			//This is where the Catch-all object goes. This is used for catching unkown IDs on the BUS. This is the NUMBER_OF_EVENTS+1 object
+			CAN1_IF2CMSK_R = CAN_IF2CMSK_WRNRD | CAN_IF2CMSK_ARB | CAN_IF2CMSK_CONTROL | CAN_IF2CMSK_MASK; //Set the MASK bit as well so the transfer writes the mask registers into the object
+			CAN1_IF2ARB2_R = CAN_IF2ARB2_MSGVAL; //Set the MSGVAL to show that the message is valid. No ID
+			
+			//We work with one more registers responsible for Masking
+			CAN1_IF2MSK2_R &= ~CAN_IF2MSK2_IDMSK_M; //clear bits 0-12. Leave the rest
+		
+			CAN1_IF2MCTL_R = 0x08 | CAN_IF2MCTL_EOB | CAN_IF2MCTL_RXIE | CAN_IF2MCTL_UMASK; //Setting the UMASK bit to use mask for acceptance filtering
+		
+			//write object number to CANIF2CRQ Register's MNUM and wait for BUSY to clear
+			CAN1_IF2CRQ_R = ((5) << CAN_IF2CRQ_MNUM_S); //Object number 5
+			while ((CAN1_IF2CRQ_R & CAN_IF2CRQ_BUSY) != 0) {} //polls until BUSY clears
+			//OBJECT 5 ENDS
 		
 			CAN1_CTL_R = CAN_CTL_IE; //Set bit 1 of CANCTL register to enable CAN interrupts
 				
@@ -228,12 +250,17 @@ void CAN1_IRQHandler(void) {
 					
 				uint16_t payloadValue = message[index].payload[0] << 8| message[index].payload[1];
 					
+				//Check value for OVER_RANGE status
 				if (payloadValue >= message[index].maxValue) {
 					message[index].status = OVER_RANGE;
 				}
         else {
            message[index].status = OK;
         }
+				
+				if (messageObject == 5) {
+					message[index].status = UNKNOWN_ID;
+				}
 					
 				InterruptFlag |= (1 << index); //sets the specific bit of the bitmask to show which index to use in main
 				

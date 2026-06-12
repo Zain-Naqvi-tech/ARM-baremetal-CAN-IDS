@@ -9,9 +9,10 @@
 #include "attacker.h"
 
 volatile uint32_t InterruptFlag = 0;
-volatile Msg message[NUMBER_OF_EVENTS];
+volatile Msg message[NUMBER_OF_EVENTS + 1];
 
 volatile uint32_t attackerTime = 0 ;
+volatile uint32_t unknownAttackerTime = 0;
 
 bool suppressed;
 
@@ -31,7 +32,8 @@ int main(void) {
 	while (1) {
 		
 		INJECT_OVER_RANGE(message, 0); //Injecting over_range values for ENGINE_RPM
-		INJECT_TOO_FAST(message, 1, &attackerTime);
+		INJECT_TOO_FAST(message, 1, &attackerTime); //Injecting TOO_FAST frames frames for THROTTLE
+		INJECT_UNKNOWN_ID(message, &unknownAttackerTime, 4);
 		
 		for (int i = 0; i < NUMBER_OF_EVENTS; i++) {
 			if (ticks - message[i].lastTransmitted >= message[i].period) {
@@ -87,6 +89,14 @@ int main(void) {
 					message[i].arrivalFlag = 0; //Resets the arrival flag to check for the next arrival
 				}
 			}
+		}
+		if (InterruptFlag & (1 << 4)) { //object 5 is flagged
+			Message_Object_UART_Print(0,&message[4]);
+			
+			__disable_irq();
+			InterruptFlag &= ~(1 << 4);
+			__enable_irq();
+			
 		}
 	}
 	

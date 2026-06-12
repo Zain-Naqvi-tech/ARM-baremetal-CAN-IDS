@@ -132,6 +132,22 @@ VEHICLE_SPEED (2 s period), silencing it from t=2.5 s to t=4.5 s so it misses it
 
 SPEED is flagged MISSING exactly once on the edge, stays silent, then re-arms and returns to OK when it resumes at 6 s. Makes the full trip
 
+## Detecting Unknown IDs (Promiscuous)
+
+A frame shows up with an ID that isn't supposed to be on the bus at all is being flagged by the IDS in this case
+
+![Unknown ID detection in Realterm](image-6.png)
+
+My first instinct was to make a clear software flagging system which would go across the array of IDs and see if the incoming ID is allowed or not. Then, I learned about CAN's own acceptance filtering system in the MCU. We originally set every event's ID into the transmit setup function which set everyone up with specific IDs at the start. Anything other than this would not be accepted. However, the mask bits and registers exist for this exact reason. 
+
+I added a new object in the setup and made it 'catch-all'. Its ID mask set entirely to 'don't care' which accepts everything. The ID field was left cleared in the arbitration 2 register to make sure it is not accepting only one specific number. The MCU stores a received frame in the lowest-numbered object that matches. Therefore, the known IDs fall in their own registers and are never flagged. Anything unknown automatically makes it to the next available object that we just put in (object 5). This means that any ID in that object is unknown and therefore invalid. 
+
+The ISR is responsible for checking and declaring any status changes to the event. The ISR checks in the NEW object (5) and if something exists there, it means it has an invalid ID and therefore needs to be flagged to UNKNOWN_ID
+
+**A bug I faced for a while.** My first iteration of this implementation flooded the entire bus with constant UNKNOWN_ID and MISSING lines. Every ID read 0x0. This was because of the way I handled the message array and its size after adding another object. I changed the preprocessor constant NUMBER_OF_EVENTS to 5 to match the new number of objects. However, this also meant that the loops running in main, CAN0/CAN1 Receive_Setup/Transmit_Setup, were all going one extra iteration. That pulled the uninitialised object 5 into the scheduler which always ran because ticks - lastTransmitted >= period now meant ticks - 0 >= 0. The fix was to keep the constant same, BUT increase the size of the message array by 1 -> `message[NUMBER_OF_EVENTS + 1]`. The new object does not need to go through the for loop which targets the main 4 objects.
+
+**Testing it:** Created a new functin called `INJECT_UNKNOWN_ID` which takes in the message, a timer, and an index. The index would be the `new object number - 1` -> `5 - 1 = 4`. This function sends a message with the message ID 0x500 on the bus using ticks and the attacker timer from main. It sends the message every 1200ms. If known IDs were leaking into this catch-all, they would also be flagged, which is not the case right. 
+
 ## Traffic Visualization
 (Planned)
 The firmware will interface with a custom Python dashboard that visualizes the live bus traffic over a serial connection. It will log standard telemetry while instantly flagging network anomalies and spoofing attempts in real time.
