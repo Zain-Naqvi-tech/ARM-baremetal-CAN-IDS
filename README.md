@@ -163,3 +163,7 @@ My first injectors were time-based and ran every few ms. However, this new featu
 - `u` (unknown ID): sends one rogue data frame with an ID outside of the allowed IDs (0x500). shows up as an unknown ID everytime we send it in
 
 **Result:** From the host machine (laptop's Realterm) we can trigger any attack and watch the matching data flip status live. The normal traffic is not affected. Result can be seen in the image above. ps. video demos on Notion. 
+
+The python dashboard has been added to keep the latest result in front of us for better live observations. Result can be seen in the image below
+
+![Python Dashboard with Live changes](./images/image-8.png)
