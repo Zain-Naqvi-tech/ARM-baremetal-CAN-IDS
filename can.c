@@ -19,9 +19,9 @@ void CAN_Message_Table_Init(volatile Msg* msg) {
         msg[ENGINE_RPM].valueMargin = 20; //Allowed margin of error for the timing (20ms)
         msg[ENGINE_RPM].arrivalFlag = 0;
         msg[ENGINE_RPM].lastArrived = 0;
-        for (int i = 0; i < msg[ENGINE_RPM].DLC; i++) {
-					msg[ENGINE_RPM].payload[i] = 0;
-        }
+		//800 rpm -> 0x0320
+				msg[ENGINE_RPM].payload[0] = 0x03;
+        msg[ENGINE_RPM].payload[1] = 0x20;
 		
 		//Populating the simulated THROTTLE Message object
 		msg[THROTTLE].canID = 0x200;
@@ -34,9 +34,8 @@ void CAN_Message_Table_Init(volatile Msg* msg) {
 		msg[THROTTLE].valueMargin = 100; //Allowed margin of error for the timing (100ms)
         msg[THROTTLE].arrivalFlag = 0;
         msg[THROTTLE].lastArrived = 0;
-        for (int i = 0; i < msg[THROTTLE].DLC; i++) {
-            msg[THROTTLE].payload[i] = 0;
-        }
+		//90 percent throttle
+        msg[THROTTLE].payload[1] = 0x5A;
 
         //Populating the simulated VEHICLE SPEED Message object
         msg[VEHICLE_SPEED].canID = 0x300;
@@ -49,9 +48,8 @@ void CAN_Message_Table_Init(volatile Msg* msg) {
 		msg[VEHICLE_SPEED].valueMargin = 200; //Allowed margin of error for timing (200ms)	
         msg[VEHICLE_SPEED].arrivalFlag = 0;
         msg[VEHICLE_SPEED].lastArrived = 0;
-        for (int i = 0; i < msg[VEHICLE_SPEED].DLC; i++) {
-            msg[VEHICLE_SPEED].payload[i] = 0;
-        }
+		//120km/h
+        msg[VEHICLE_SPEED].payload[1] = 0x78;
 
         //Populating the simulated COOLANT TEMP Message object
         msg[COOLANT_TEMP].canID = 0x400;
@@ -64,9 +62,8 @@ void CAN_Message_Table_Init(volatile Msg* msg) {
         msg[COOLANT_TEMP].valueMargin = 400; //Allowed margin of error for timing (400ms)
         msg[COOLANT_TEMP].arrivalFlag = 0;
         msg[COOLANT_TEMP].lastArrived = 0;
-        for (int i = 0; i < msg[COOLANT_TEMP].DLC; i++) {
-            msg[COOLANT_TEMP].payload[i] = 0;
-        }
+		//30 degrees C
+        msg[COOLANT_TEMP].payload[1] = 0x1E;
 		
 }
 

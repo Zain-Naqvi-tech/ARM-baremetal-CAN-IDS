@@ -70,7 +70,7 @@ UART2 alternate function, Port D clock enabled.
 RX,0x100,8,0x11,0x00,0x22,0x00,0x33,0x00,0x44,0x00,0
 ```
 
-UART2 CAN trace in RealTerm![alt text](image-1.png)
+UART2 CAN trace in RealTerm![alt text](./images/image-1.png)
 
 ## Milestone 3: Multi-ECU Bus + Interrupt-Driven Monitor
 
@@ -80,7 +80,7 @@ Simulate a realistic multi-ECU CAN bus and monitor it live. Four ECUs broadcasti
 
 **RX:** CAN1 uses one message object per ID (we can do a total of 32) with receive interrupts enabled. The ISR (CAN1_IRQHandler) identifies the message object using CANINT, drains the pending objects using a loop, and hands it off to main using the flag bitmask. Main prints each frame using UART2 after checking if the specific bit of the flag bitmask is set. After printing, it clears that bit from flag.  
 
-Multi-ECU trace in RealTerm![alt text](image-2.png)
+Multi-ECU trace in RealTerm![alt text](./images/image-2.png)
 
 > Design note: RX is interrupt-driven so the monitor never stalls the TX
 > scheduler and never misses a frame; the ISR stays short (capture only),
@@ -96,7 +96,7 @@ Running concurrently on the same Cortex-M4 core is a lightweight, custom-built I
 Every property has been given a maximum value. Anything over this value would be an anomaly. Every message struct has also been given a status which is used for UART printing.  `ENGINE_RPM` is set to 6500 (0x1964 in payload array) which is GREATER than the maximum threshold value of 6000 
 The rest have a payload under their maxValue threshold. We expect the RPM status to be 'OVER_RANGE' and the rest to be 'OK'
 
-UART output testing message status ![alt text](image-3.png)
+UART output testing message status ![alt text](./images/image-3.png)
 
 ## Test — TOO_FAST Detection (Frame Injection)
 
@@ -104,7 +104,7 @@ The IDS flags a message arriving faster than its defined period
 
 **Setup:** an attacker block injects an extra throttle frame (ID 0x200) every 1600 ms, off the event's normal 1000 ms schedule. The legit throttle ECU keeps its own rhythm untouched.
 
-![TOO_FAST detection in RealTerm](image-4.png)
+![TOO_FAST detection in RealTerm](./images/image-4.png)
 
 **Mistakes on the way here:**
 - Tried injecting with a blocking delay loop. This only froze the scheduler and shifted every timestamp, because `ticks` runs in hardware regardless of a busy-wait. *Lesson: inject traffic, not delays.*
@@ -120,7 +120,7 @@ The IDS flags a message that *stops arriving*. A dropped, disconnected, or attac
 VEHICLE_SPEED (2 s period), silencing it from t=2.5 s to t=4.5 s so it misses its
 4 s slot, then recovers.
 
-![MISSING detection in RealTerm](image-5.png)
+![MISSING detection in RealTerm](./images/image-5.png)
 
 **How I got here (and what I learned):**
 - First tried to fake it with delays and disabled-interrupt tricks, all failed,
@@ -136,7 +136,7 @@ SPEED is flagged MISSING exactly once on the edge, stays silent, then re-arms an
 
 A frame shows up with an ID that isn't supposed to be on the bus at all is being flagged by the IDS in this case
 
-![Unknown ID detection in Realterm](image-6.png)
+![Unknown ID detection in Realterm](./images/image-6.png)
 
 My first instinct was to make a clear software flagging system which would go across the array of IDs and see if the incoming ID is allowed or not. Then, I learned about CAN's own acceptance filtering system in the MCU. We originally set every event's ID into the transmit setup function which set everyone up with specific IDs at the start. Anything other than this would not be accepted. However, the mask bits and registers exist for this exact reason. 
 
@@ -149,5 +149,17 @@ The ISR is responsible for checking and declaring any status changes to the even
 **Testing it:** Created a new functin called `INJECT_UNKNOWN_ID` which takes in the message, a timer, and an index. The index would be the `new object number - 1` -> `5 - 1 = 4`. This function sends a message with the message ID 0x500 on the bus using ticks and the attacker timer from main. It sends the message every 1200ms. If known IDs were leaking into this catch-all, they would also be flagged, which is not the case right. 
 
 ## Traffic Visualization
-(Planned)
-The firmware will interface with a custom Python dashboard that visualizes the live bus traffic over a serial connection. It will log standard telemetry while instantly flagging network anomalies and spoofing attempts in real time.
+The firmware is interfacing with a custom Python dashboard that visualizes the live bus traffic over a serial connection. It will log standard telemetry while instantly flagging network anomalies and spoofing attempts in real time.
+
+Up to this point the UART link was one-way. To make the IDS demoable from a user's perspective, I made it bidirectional. The host can send a single character, the firmware injects the matching attack, and the detector lights up in real-time
+
+![Interactive injection on the live dashboard](./images/image-7.png)
+
+The initial trap with reading UART characters in the main loop is the blocking nature of the UART_Inchar function. It uses a while loop to keep checking the UART Flag `UART_FR_R` register. While it waits, the CAN system freezes. Therefore, a rather different system was implemented. Check the flag only once per function call, and set a software flag which we set if there is data waiting in the buffer. Then, return that char from the UART RX input. The main function looks for the flag and its value on every run, and when it is set to 1, it chooses between a set of characters using a switch case statement. Based on the character, specific attacker functions are called
+
+My first injectors were time-based and ran every few ms. However, this new feature allows the user (attacker) to send in attacks at any time. The three are not the same kind of events, so one-shot means something different for each:
+- `f` (too fast): transmit one off-schedule throttle frame
+- `o` (over-range): force the RPM value high which persists as a stuck value until a manual reset. 
+- `u` (unknown ID): sends one rogue data frame with an ID outside of the allowed IDs (0x500). shows up as an unknown ID everytime we send it in
+
+**Result:** From the host machine (laptop's Realterm) we can trigger any attack and watch the matching data flip status live. The normal traffic is not affected. Result can be seen in the image above. ps. video demos on Notion. 

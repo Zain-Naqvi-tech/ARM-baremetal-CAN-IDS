@@ -13,6 +13,8 @@ void UART_OutChar(char data);
 void UART_printf(const char* array);
 void Status_Check(char* array, int status);
 
+volatile extern uint32_t RXFlag;
+
 void Message_Object_UART_Print(uint32_t direction, volatile Msg* message);
 
 #endif

@@ -11,8 +11,9 @@
 volatile uint32_t InterruptFlag = 0;
 volatile Msg message[NUMBER_OF_EVENTS + 1];
 
-volatile uint32_t attackerTime = 0 ;
-volatile uint32_t unknownAttackerTime = 0;
+volatile uint32_t RXFlag = 0;
+
+char data;
 
 bool suppressed;
 
@@ -31,9 +32,29 @@ int main(void) {
 	CAN1_RX_Setup(message); //Conducts a one-time initialization for the registers responsible for RX
 	while (1) {
 		
-		INJECT_OVER_RANGE(message, 0); //Injecting over_range values for ENGINE_RPM
-		INJECT_TOO_FAST(message, 1, &attackerTime); //Injecting TOO_FAST frames frames for THROTTLE
-		INJECT_UNKNOWN_ID(message, &unknownAttackerTime, 4);
+		data = UART_InChar();
+		if (RXFlag == 1) {
+			//now we do case switch?
+			switch (data)
+			{
+			case 'f': //injects TOO_FAST frames for THROTTLE
+				INJECT_TOO_FAST(message, 1); //Injecting TOO_FAST frames frames for THROTTLE
+				break;
+			
+			case 'o': //Injecting over_range values for ENGINE_RPM
+				INJECT_OVER_RANGE(message, 0); //Injecting over_range values for ENGINE_RPM
+				break;
+			
+			case 'u': //Injecting UNKNOWN ID frames for object 5
+				INJECT_UNKNOWN_ID(message, 4); //Injecting UNKNOWN ID frames for object 5 (which is not used in the normal system)
+				break;
+			
+			default:
+				break;
+			}
+			
+			RXFlag = 0;
+		}
 		
 		for (int i = 0; i < NUMBER_OF_EVENTS; i++) {
 			if (ticks - message[i].lastTransmitted >= message[i].period) {

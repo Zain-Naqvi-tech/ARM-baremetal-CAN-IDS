@@ -10,8 +10,6 @@ void UART_Init(void) {
 	SYSCTL_RCGCUART_R |= 0x0004; // activate UART2 - Bit 2
 	SYSCTL_RCGCGPIO_R |= 0x0008; // activate port D clock
 	
-	//UART2_CTL_R &= ~0x0004; // disable UART 
-
 	while((SYSCTL_PRUART_R&SYSCTL_PRUART_R2) == 0){};
 		
   UART2_CTL_R &= ~UART_CTL_UARTEN;      // disable UART
@@ -25,19 +23,22 @@ void UART_Init(void) {
   UART2_CTL_R &= ~UART_CTL_HSE;         // high-speed disable; divide clock by 16 rather than 8 (default)
 
 	UART2_LCRH_R = 0x0070;		// 8-bit word length, enable FIFO 
-	UART2_CTL_R = 0x0301;			// enable RXE, TXE and UART 
+	UART2_CTL_R = UART_CTL_RXE | UART_CTL_TXE | UART_CTL_UARTEN; // enable RXE, TXE and UART. Comes out to be 0x0301
 		
 	//Ports PD4 and PD5 are needed
 	GPIO_PORTD_PCTL_R = (GPIO_PORTD_PCTL_R&0xFF00FFFF)+0x00110000; // UART   
-  GPIO_PORTD_AMSEL_R &= ~0x30;    // disable analog function on PA1-0   
-  GPIO_PORTD_AFSEL_R |= 0x30;        // enable alt funct on PA1-0   
-  GPIO_PORTD_DEN_R |= 0x30;            // enable digital I/O on PA1-0 
+  GPIO_PORTD_AMSEL_R &= ~0x30;    // disable analog function on PD4-5   
+  GPIO_PORTD_AFSEL_R |= 0x30;        // enable alt funct on PD4-5 
+  GPIO_PORTD_DEN_R |= 0x30;            // enable digital I/O on PD4-5
 }
 
 // Wait for new input, then return ASCII code 
 	char UART_InChar(void) {
-		while((UART2_FR_R&0x0010) != 0);		// wait until RXFE is 0 
-		return((char)(UART2_DR_R&0xFF));
+		if((UART2_FR_R&0x0010) == 0) { // check if RXE is 0 
+			RXFlag = 1;
+			return((char)(UART2_DR_R&0xFF));
+		}	
+		return -1;
 	} 
 	
 	// Wait for buffer to be not full, then output 
@@ -64,6 +65,7 @@ void UART_Init(void) {
 				UART_printf(" Successful.\r\n");
 			}
 	}
+	
 	
 	//Prints out the message object elements for better CAN demo and debugging
 	//RX/TX,CANID,DLC,payload bits,timestamp
@@ -98,7 +100,7 @@ void UART_Init(void) {
 			UART_printf("UNKNOWN_ID,");
 			break;
 		
-		deafult:
+		default:
 			UART_printf("OK,");
 			break;
 			
