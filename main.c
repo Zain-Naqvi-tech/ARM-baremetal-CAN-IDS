@@ -8,6 +8,8 @@
 #include "msp432e401y.h"
 #include "attacker.h"
 
+#define ABS(x) (((x) < 0) ? -(x) : (x))
+
 volatile uint32_t InterruptFlag = 0;
 volatile Msg message[NUMBER_OF_EVENTS + 1];
 
@@ -49,6 +51,10 @@ int main(void) {
 				INJECT_UNKNOWN_ID(message, 4); //Injecting UNKNOWN ID frames for object 5 (which is not used in the normal system)
 				break;
 			
+			case 's': //Injecting a SPIKE frame for COOLANT_TEMP
+				INJECT_SPIKE(message, 3);
+				break;
+			
 			default:
 				break;
 			}
@@ -60,7 +66,7 @@ int main(void) {
 			if (ticks - message[i].lastTransmitted >= message[i].period) {
 				suppressed = INJECT_MISSING(2500, 4500, i);
 				if (!suppressed) {
-					CAN0_Transmit(message, i);
+					CAN0_Transmit(message, i); //Just refactored the main transmit to account for the missing frame as well
 				}
 				
 				message[i].lastTransmitted += message[i].period;
@@ -68,6 +74,13 @@ int main(void) {
 			}
 			
 			if (InterruptFlag & (1 << i)) {
+				
+				uint32_t valueDelta = ABS(((message[i].payload[0] << 8) | (message[i].payload[1])) - message[i].lastValue);
+				
+				if ((message[i].status != OVER_RANGE) && (valueDelta > message[i].maxMargin)) {
+					message[i].status = SPIKE;
+					message[i].lastValue = (message[i].payload[0] << 8) | (message[i].payload[1]);
+				}
 				
 				uint32_t delta = ticks - message[i].lastArrived; //Finds the difference between the current time and the last time 
 				

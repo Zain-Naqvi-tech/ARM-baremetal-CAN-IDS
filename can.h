@@ -16,7 +16,8 @@ typedef enum {
 	MISSING, //also acts as too slow 
 	TOO_FAST,
 	OVER_RANGE,
-	UNKNOWN_ID
+	UNKNOWN_ID,
+	SPIKE
 } ERROR_STATUS;
 
 typedef struct {
@@ -32,6 +33,8 @@ typedef struct {
 	uint32_t lastArrived; //This is the last time the message for this event was received - used to determine if a message is missing or not
 	uint32_t valueMargin; //This is a margin 
 	uint32_t arrivalFlag; //This flag is checked before timing checks. If the flag is zero, it means that this was the first arrival and the too fast/too slow does not matter
+	uint32_t lastValue; //This is used to track the last transmission value and use it to compare with the current frame to check for spikes
+	uint32_t maxMargin; //This is the maximum difference between the current and last transmission value. It is used to see if the difference is big enough to declare it a spike
 } Msg;
 
 typedef enum {

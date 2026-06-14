@@ -167,3 +167,15 @@ My first injectors were time-based and ran every few ms. However, this new featu
 The python dashboard has been added to keep the latest result in front of us for better live observations. Result can be seen in the image below
 
 ![Python Dashboard with Live changes](./images/image-8.png)
+
+## Test — SPIKE Detection (Rate-of-Change)
+
+This is the detector I designed after spotting a gap in the other four. OVER_RANGE catches a value that crosses its ceiling, but it says nothing about a value that stays inside the legal range and simply jumps to an impossible degree. An attacker spoofing a believable value, even if it is wrong will result in a reading that looks legal.
+
+![SPIKE detection in RealTerm](./images/image-9.png)
+
+**The idea.** A real physical signal can only change so fast. An engine can't gain 4000 RPM in half a second, and coolant physically cannot jump 30°C in one 4-second frame. So instead of checking a value against a ceiling, I check the *delta between consecutive frames* against limit. Each message keeps a `lastValue` and a `maxMargin`; when a new frame arrives, if the jump from the last value exceeds the margin, it's status is flagged as SPIKE.
+
+A spoofed value can be both out of range and a huge jump. I decided OVER_RANGE wins that tie. It is more specific, so the spike check only fires when the frame isn't already flagged over-range.
+
+**Testing:** `INJECT_SPIKE` forces COOLANT_TEMP from its original 30°C to 60°C which is a 30-degree step that's thermally impossible in one frame, but still far below the 120°C ceiling, so only the rate check can catch it. On the next coolant frame it's flagged SPIKE once on the jump, then settles to OK at the new level. The spike is the transition, not the new value. The other signals and the over-range path stay untouched.

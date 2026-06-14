@@ -32,3 +32,10 @@ void INJECT_UNKNOWN_ID(volatile Msg* message, uint32_t index) {
 	CAN0_Transmit(message, index); //transmits the unknown ID message. 
 	
 }
+
+void INJECT_SPIKE(volatile Msg* message, uint32_t index) {
+	
+	//Let's make it so that the temp spikes 30 degrees between frames which is over the limit of 10
+	message[index].payload[1] = 0x3C; //60 degrees
+	
+}

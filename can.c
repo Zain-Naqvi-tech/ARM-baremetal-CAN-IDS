@@ -22,6 +22,8 @@ void CAN_Message_Table_Init(volatile Msg* msg) {
 		//800 rpm -> 0x0320
 				msg[ENGINE_RPM].payload[0] = 0x03;
         msg[ENGINE_RPM].payload[1] = 0x20;
+				msg[ENGINE_RPM].lastValue = 800;
+				msg[ENGINE_RPM].maxMargin = 500;
 		
 		//Populating the simulated THROTTLE Message object
 		msg[THROTTLE].canID = 0x200;
@@ -36,6 +38,8 @@ void CAN_Message_Table_Init(volatile Msg* msg) {
         msg[THROTTLE].lastArrived = 0;
 		//90 percent throttle
         msg[THROTTLE].payload[1] = 0x5A;
+				msg[THROTTLE].lastValue = 90;
+				msg[THROTTLE].maxMargin = 40;
 
         //Populating the simulated VEHICLE SPEED Message object
         msg[VEHICLE_SPEED].canID = 0x300;
@@ -50,6 +54,8 @@ void CAN_Message_Table_Init(volatile Msg* msg) {
         msg[VEHICLE_SPEED].lastArrived = 0;
 		//120km/h
         msg[VEHICLE_SPEED].payload[1] = 0x78;
+				msg[VEHICLE_SPEED].lastValue = 120;
+				msg[VEHICLE_SPEED].maxMargin = 30;
 
         //Populating the simulated COOLANT TEMP Message object
         msg[COOLANT_TEMP].canID = 0x400;
@@ -64,6 +70,8 @@ void CAN_Message_Table_Init(volatile Msg* msg) {
         msg[COOLANT_TEMP].lastArrived = 0;
 		//30 degrees C
         msg[COOLANT_TEMP].payload[1] = 0x1E;
+				msg[COOLANT_TEMP].lastValue = 30;
+				msg[COOLANT_TEMP].maxMargin = 10; //10 degree 
 		
 }
 

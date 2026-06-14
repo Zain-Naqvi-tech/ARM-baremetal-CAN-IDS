@@ -100,6 +100,10 @@ void UART_Init(void) {
 			UART_printf("UNKNOWN_ID,");
 			break;
 		
+		case SPIKE:
+			UART_printf("SPIKE,");
+			break;
+		
 		default:
 			UART_printf("OK,");
 			break;
