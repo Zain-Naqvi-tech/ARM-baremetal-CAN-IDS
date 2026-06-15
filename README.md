@@ -9,6 +9,22 @@ By leveraging the dual built-in CAN controllers (CAN0 and CAN1) routed through e
 * **Node 1 (Engine ECU):** Broadcasts realistic automotive telemetry (RPM, throttle, speed, and temperature) at standard vehicular message rates.
 * **Node 2 (Body Control Module):** Actively listens, processes, and responds to the network traffic.
 
+## At a Glance
+
+A bare-metal automotive CAN intrusion detection system on a single ARM Cortex-M4 (MSP432E401Y). Dual on-chip CAN controllers wired through real transceivers into a two-node bus, written from raw registers with no vendor HAL. Five anomaly detectors, an on-demand fault-injection framework driven over UART, and a live Python dashboard.
+
+| Detection | What it catches | Method | Verified on hardware |
+|-----------|-----------------|--------|----------------------|
+| **Over-range** | A signal past its physical limit (RPM > 6000) | Per-frame value check in the RX interrupt | ✅ RPM forced to 6500, flagged every frame |
+| **Too-fast** | A message arriving faster than its schedule (replay / injection) | Inter-arrival timing vs. expected period | ✅ Extra throttle frame every 1600 ms, flagged |
+| **Missing** | A message that stops arriving (silenced / dropped node) | Deadline watchdog scanned in the main loop | ✅ Speed silenced 2 s, flagged on the deadline, recovers on resume |
+| **Unknown ID** | A frame from an ID outside the known network (rogue ECU) | Hardware catch-all message object + match priority | ✅ Rogue 0x500 flagged, known IDs untouched |
+| **Spike (rate-of-change)** | A value that stays in range but jumps faster than physically possible (in-range spoofing) | Frame-to-frame delta vs. a per-signal limit | ✅ Coolant forced 30 → 60 C, flagged once on the jump |
+
+**Interactive:** every attack is triggerable live from the host with a single keypress over UART, and the dashboard shows each signal decoded into real units with color-coded status. Detection spans three axes: **value** (is it possible?), **timing** (too fast, or gone?), and **identity** (does this ID belong?), plus a rate-of-change rule for spoofing that stays within legal bounds.
+
+Full implementation, the debugging stories, and the design decisions behind each detector are in the milestones below.
+
 ## Phase 1: Hardware Setup & Bare-Metal Initialization
 * **External Hardware:** Utilized SN65HVD230 CAN transceivers for physical communication. The modules include built-in 120Ω termination resistors across the CANH and CANL headers.
 * **MCU Configuration:** Located and mapped the specific registers and GPIO pins responsible for CAN communication on the Cortex-M4.
