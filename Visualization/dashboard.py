@@ -28,6 +28,7 @@ STATUS_STYLE = {
     "TOO_FAST":   "bold yellow",
     "MISSING":    "bold magenta",
     "UNKNOWN_ID": "bold red",
+    "SPIKE":      "bold blue",
 }
 
 # Single-char commands the firmware's UART-RX switch understands
@@ -35,6 +36,7 @@ COMMANDS = {
     "f": "TOO_FAST (throttle)",
     "o": "OVER_RANGE (RPM)",
     "u": "UNKNOWN_ID (0x500)",
+    "s": "SPIKE (coolant)",
 }
 
 state = {}                # CAN ID -> latest record (owned by the reader thread)
@@ -90,7 +92,7 @@ def build_table():
         box=box.HEAVY_HEAD,
         header_style="bold cyan",
         caption=(
-            "[f] too-fast    [o] over-range    [u] unknown-id    [q] quit"
+            "[f] too-fast    [o] over-range    [u] unknown-id    [s] spike    [q] quit"
             f"        last sent: [bold]{last_command}[/bold]"
         ),
         expand=False,
@@ -142,7 +144,7 @@ def main():
         console.print("[yellow]Is RealTerm still holding the port? Close it and retry.[/yellow]")
         sys.exit(1)
 
-    console.print(f"[green]Listening on {PORT} @ {BAUD} baud.  Press f / o / u to inject, q to quit.[/green]")
+    console.print(f"[green]Listening on {PORT} @ {BAUD} baud.  Press f / o / u / s to inject, q to quit.[/green]")
 
     with Live(build_table(), console=console, refresh_per_second=10, screen=False) as live:
         # Reader runs in the background; the main thread owns the keyboard.

@@ -340,7 +340,7 @@
               <MiscControls></MiscControls>
               <Define></Define>
               <Undefine></Undefine>
-              <IncludePath></IncludePath>
+              <IncludePath>..\Core;..\Drivers;..\Security;..\Device</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -382,87 +382,60 @@
       </TargetOption>
       <Groups>
         <Group>
-          <GroupName>Source Group 1</GroupName>
+          <GroupName>Core</GroupName>
           <Files>
-            <File>
-              <FileName>tm4c1294ncpdt.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\tm4c1294ncpdt.h</FilePath>
-            </File>
             <File>
               <FileName>main.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\main.c</FilePath>
-            </File>
-            <File>
-              <FileName>PLL.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\PLL.c</FilePath>
-            </File>
-            <File>
-              <FileName>PLL.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\PLL.h</FilePath>
-            </File>
-            <File>
-              <FileName>uart.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\uart.h</FilePath>
-            </File>
-            <File>
-              <FileName>gpio.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\gpio.c</FilePath>
-            </File>
-            <File>
-              <FileName>gpio.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\gpio.h</FilePath>
-            </File>
-            <File>
-              <FileName>can.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\can.h</FilePath>
-            </File>
-            <File>
-              <FileName>can.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\can.c</FilePath>
+              <FilePath>..\Core\main.c</FilePath>
             </File>
             <File>
               <FileName>throw_error.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\throw_error.c</FilePath>
+              <FilePath>..\Core\throw_error.c</FilePath>
             </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>Device</GroupName>
+        </Group>
+        <Group>
+          <GroupName>Drivers</GroupName>
+          <Files>
             <File>
-              <FileName>throw_error.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\throw_error.h</FilePath>
-            </File>
-            <File>
-              <FileName>uart.c</FileName>
+              <FileName>can.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\uart.c</FilePath>
+              <FilePath>..\Drivers\can.c</FilePath>
             </File>
             <File>
-              <FileName>systick.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\systick.h</FilePath>
+              <FileName>gpio.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Drivers\gpio.c</FilePath>
+            </File>
+            <File>
+              <FileName>PLL.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Drivers\PLL.c</FilePath>
             </File>
             <File>
               <FileName>systick.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\systick.c</FilePath>
+              <FilePath>..\Drivers\systick.c</FilePath>
             </File>
             <File>
-              <FileName>attacker.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\attacker.h</FilePath>
+              <FileName>uart.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Drivers\uart.c</FilePath>
             </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>Security</GroupName>
+          <Files>
             <File>
               <FileName>attacker.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\attacker.c</FilePath>
+              <FilePath>..\Security\attacker.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -511,5 +484,14 @@
       </file>
     </files>
   </RTE>
+
+  <LayerInfo>
+    <Layers>
+      <Layer>
+        <LayName>CAN_Project_IDS</LayName>
+        <LayPrjMark>1</LayPrjMark>
+      </Layer>
+    </Layers>
+  </LayerInfo>
 
 </Project>

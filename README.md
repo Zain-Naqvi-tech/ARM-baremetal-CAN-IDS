@@ -23,6 +23,10 @@ A bare-metal automotive CAN intrusion detection system on a single ARM Cortex-M4
 
 **Interactive:** every attack is triggerable live from the host with a single keypress over UART, and the dashboard shows each signal decoded into real units with color-coded status. Detection spans three axes: **value** (is it possible?), **timing** (too fast, or gone?), and **identity** (does this ID belong?), plus a rate-of-change rule for spoofing that stays within legal bounds.
 
+Demos:
+https://youtu.be/XWLsz7M9KcM
+https://youtu.be/OpzYNLC9uAE
+
 Full implementation, the debugging stories, and the design decisions behind each detector are in the milestones below.
 
 ## Phase 1: Hardware Setup & Bare-Metal Initialization
