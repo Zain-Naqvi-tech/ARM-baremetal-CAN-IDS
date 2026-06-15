@@ -27,7 +27,7 @@ Demos:
 https://youtu.be/XWLsz7M9KcM
 https://youtu.be/OpzYNLC9uAE
 
-Full implementation, the debugging stories, and the design decisions behind each detector are in the milestones below.
+Full implementation, the debugging stories, and the design decisions behind each detector are in the milestones below. Performance Metrics are included at the end
 
 ## Phase 1: Hardware Setup & Bare-Metal Initialization
 * **External Hardware:** Utilized SN65HVD230 CAN transceivers for physical communication. The modules include built-in 120Ω termination resistors across the CANH and CANL headers.
@@ -199,3 +199,13 @@ This is the detector I designed after spotting a gap in the other four. OVER_RAN
 A spoofed value can be both out of range and a huge jump. I decided OVER_RANGE wins that tie. It is more specific, so the spike check only fires when the frame isn't already flagged over-range.
 
 **Testing:** `INJECT_SPIKE` forces COOLANT_TEMP from its original 30°C to 60°C which is a 30-degree step that's thermally impossible in one frame, but still far below the 120°C ceiling, so only the rate check can catch it. On the next coolant frame it's flagged SPIKE once on the jump, then settles to OK at the new level. The spike is the transition, not the new value. The other signals and the over-range path stay untouched.
+
+## Performance Metrics
+
+**Detection Latency:**
+
+**ISR Execution Time:**
+
+**CPU Headroom:**
+
+**False-Positive Behaviour:**
