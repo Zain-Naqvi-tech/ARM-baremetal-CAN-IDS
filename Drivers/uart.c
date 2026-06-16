@@ -5,6 +5,7 @@
 
 static char printf_buffer[1023];
 
+
 //We are using UART2 because PA1/PA2 are now being used for CAN communication
 void UART_Init(void) {
 	SYSCTL_RCGCUART_R |= 0x0004; // activate UART2 - Bit 2
@@ -64,6 +65,13 @@ void UART_Init(void) {
 				UART_printf(array);
 				UART_printf(" Successful.\r\n");
 			}
+	}
+	
+	void UART_numeric_print(uint32_t num) {
+	
+		sprintf(printf_buffer, "%u \r\n", num);
+		UART_printf(printf_buffer);
+	
 	}
 	
 	

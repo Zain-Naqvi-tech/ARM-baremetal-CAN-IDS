@@ -427,6 +427,11 @@
               <FileType>1</FileType>
               <FilePath>..\Drivers\uart.c</FilePath>
             </File>
+            <File>
+              <FileName>dwt.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Drivers\dwt.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

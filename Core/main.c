@@ -7,6 +7,7 @@
 #include "systick.h"
 #include "msp432e401y.h"
 #include "attacker.h"
+#include "dwt.h"
 
 #define ABS(x) (((x) < 0) ? -(x) : (x))
 
@@ -27,6 +28,7 @@ int main(void) {
 	UART_Init(); //Initialize UART2
 	PortN_Init(); //Initialize Port N
 	PortF_Init(); //Initialize Port F
+	DWT_Init(); //Initialize DWT for timing measurements
 	CAN0_Init(); //Initialize CAN0 as TX
 	CAN1_Init(); //Initialize CAN1 as RX
 	CAN_Message_Table_Init(message); //Set up the table which initializes all the event's message structs seperately
