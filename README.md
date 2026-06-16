@@ -200,9 +200,33 @@ A spoofed value can be both out of range and a huge jump. I decided OVER_RANGE w
 
 **Testing:** `INJECT_SPIKE` forces COOLANT_TEMP from its original 30°C to 60°C which is a 30-degree step that's thermally impossible in one frame, but still far below the 120°C ceiling, so only the rate check can catch it. On the next coolant frame it's flagged SPIKE once on the jump, then settles to OK at the new level. The spike is the transition, not the new value. The other signals and the over-range path stay untouched.
 
-## Performance Metrics
+# Performance Metrics
 
-**Detection Latency:**
+## Performance — Detection Latency
+
+**Measurement:** Time from a frame being captured in the ISR `CAN1_IRQHandler` to the moment the IDS makes a final decision on the status of the message. Initially, the goal was to find the time from the moment a fault is injected. However, that time would be from transmission all the way until the status change which would also require travelling time from the wires. To avoid that delay AND make sure that we are measuring the time of the IDS itself, it was decided to take the time between the receival and status update. So, the time will be measured at EVERY loop of receivals and updates.
+
+**What I used:** The Cortex-M4 has an internal counter known as DWT Cycle Counter `CYCCNT`. It runs at system clock speed (120MHz) -> 8.33ns per tick. Enabled purely in software and did not require any trace units (The CMSIS-DAP debugger can not stream trace). This was chosen over the SysTick counter, for a 1ms delay between checks would be too granular. It would be blind to microsecond updates.
+
+Using this counter, to find the current time, one must execute the command `Time = DWT->CYCCNT;`
+
+`StartTime` is latched in the ISR as each frame is read out of its message object. `StartTime` has been added as a message object struct element. This makes sure that each message has its own starting time to avoid any conflicts or overlaps. 
+`StopTime` is latched in two places. Firstly, in the ISR. Here, it is found right after interrupt flag is set which essentially sends the object to main. This focuses on both the OVER_RANGE and UNKNOWN_ID branch. Secondly, in main right before the main uart print for the message object. This focuses on the SPIKE and TOO_FAST branches
+
+**Results:** 
+
+![](./images/image-10.png)
+![](./images/image-11.png)
+
+
+| Condition | Latency (cycles) | Latency |
+|---|---|---|
+| Uncontended (frame arrives alone) | ~460–860 | ~3.8–7.2 µs |
+| Contended (frames share a tick)   | ~1.14 M  | ~9.5 ms |
+
+**Results Explained:** A frame that arrives while the main loop is idle (a frame that arrives alone) is classified almost immediately. The few microseconds are due to the ISR capture work and the jump to main. When multiple ECUs coincide on one tick (e.g. RPM, speed, and throttle all at the same time), the system is designed to work like a pipeline. The ISR captures them back-to-back, then main processes them serially, and each message is followed by a uart print. Later frames in the burst of frames wait behind the prints of the earlier ones, so their verdict times go up to milliseconds. They are all received and decoded in the while loop of the ISR back to back. This whole pipeline of multiple ECUs is significantly more time-consuming than a single frame. 
+
+**Takeaways:** This is the quantitative proof of the IDS detection and classification system. The detection itself is in microseconds, and the millisecond tail is the cost of handling multiple frames. Something I realized from this is the observer effect. By putting out these timers and uart print statements for latency, I am essentially increasing the latency. 
 
 **ISR Execution Time:**
 

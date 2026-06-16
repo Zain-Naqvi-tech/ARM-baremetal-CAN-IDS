@@ -9,10 +9,13 @@
 #include "attacker.h"
 #include "dwt.h"
 
-#define ABS(x) (((x) < 0) ? -(x) : (x))
+#define ABS(x) (((x) < 0) ? -(x):(x))
 
 volatile uint32_t InterruptFlag = 0;
 volatile Msg message[NUMBER_OF_EVENTS + 1];
+
+volatile uint32_t StopTime = 0;
+volatile uint32_t TimeDifference = 0;
 
 volatile uint32_t RXFlag = 0;
 
@@ -77,12 +80,12 @@ int main(void) {
 			
 			if (InterruptFlag & (1 << i)) {
 				
-				uint32_t valueDelta = ABS(((message[i].payload[0] << 8) | (message[i].payload[1])) - message[i].lastValue);
+				uint32_t valueDelta = ABS( (int32_t)((message[i].payload[0] << 8) | (message[i].payload[1])) - (int32_t)(message[i].lastValue) );
 				
 				if ((message[i].status != OVER_RANGE) && (valueDelta > message[i].maxMargin)) {
 					message[i].status = SPIKE;
-					message[i].lastValue = (message[i].payload[0] << 8) | (message[i].payload[1]);
 				}
+				message[i].lastValue = (message[i].payload[0] << 8) | (message[i].payload[1]);
 				
 				uint32_t delta = ticks - message[i].lastArrived; //Finds the difference between the current time and the last time 
 				
@@ -104,6 +107,13 @@ int main(void) {
 					}
 					
 					message[i].lastArrived = ticks;
+					
+					//Stop the timer since the status has been finalised
+					StopTime = DWT->CYCCNT; //Find the StopTime responsible for either SPIKE or TOO_FAST
+					TimeDifference = StopTime - message[i].StartTime;
+					UART_printf("TD = ");
+					UART_numeric_print(TimeDifference);
+					
 					Message_Object_UART_Print(0, &message[i]); 
 					
 					//We need to disable interrupts for a read-modify-write sequence in order to ensure we do not miss any messages

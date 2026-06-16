@@ -240,6 +240,9 @@ void CAN1_IRQHandler(void) {
 				while ((CAN1_IF2CRQ_R & CAN_IF2CRQ_BUSY) != 0) {} //polls until BUSY clears
 			
 				uint32_t index = messageObject - 1; //Extracts the object number into a variable (index friendly)
+					
+				//frame received - Start the timer
+				message[index].StartTime = DWT->CYCCNT; //Read the timer value
 
 				message[index].canID = (CAN1_IF2ARB2_R >> 2) & 0x7FF; //get the message ID and save it to the struct field
 				message[index].DLC = CAN1_IF2MCTL_R & 0x0000000F; //extract the first 4 bits of the MCTL register to get the DLC (Data length code) - Supposed to be 8 bytes based on the transmit function
@@ -269,6 +272,9 @@ void CAN1_IRQHandler(void) {
 					
 				InterruptFlag |= (1 << index); //sets the specific bit of the bitmask to show which index to use in main
 				
+				//frame given to main
+				StopTime = DWT->CYCCNT; //read the end timer value. This focuses on either OVER_RANGE or UNKNOWN_ID if they are set as the status
+								
 				messageObject = CAN1_INT_R & CAN_INT_INTID_M;
 	
 			}

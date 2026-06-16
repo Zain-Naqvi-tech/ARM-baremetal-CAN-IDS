@@ -35,6 +35,7 @@ typedef struct {
 	uint32_t arrivalFlag; //This flag is checked before timing checks. If the flag is zero, it means that this was the first arrival and the too fast/too slow does not matter
 	uint32_t lastValue; //This is used to track the last transmission value and use it to compare with the current frame to check for spikes
 	uint32_t maxMargin; //This is the maximum difference between the current and last transmission value. It is used to see if the difference is big enough to declare it a spike
+	uint32_t StartTime; //used for the start time (measuring time difference)
 } Msg;
 
 typedef enum {
@@ -46,6 +47,9 @@ typedef enum {
 
 volatile extern Msg message[NUMBER_OF_EVENTS + 1];
 volatile extern uint32_t InterruptFlag; //This will be used as a bitmask -> 0x00000000 (8*4=32)
+
+volatile extern uint32_t StopTime; //used for the stop time (measuring time difference)
+volatile extern uint32_t TimeDifference; 
 
 void CAN0_Init(void);
 void CAN1_Init(void);
