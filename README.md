@@ -72,7 +72,7 @@ The first integration milestone: a single CAN frame transmitted from CAN0, recei
 
 **Verified result**: debugger watch window after one TX → RX cycle:
 
-![alt text](image.png)
+![alt text](./images/image.png)
 
 ## Milestone 2: Stream live CAN traffic to a host PC using UART
 
