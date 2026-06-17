@@ -216,7 +216,6 @@ Using this counter, to find the current time, one must execute the command `Time
 **Results:** 
 
 ![](./images/image-10.png)
-![](./images/image-11.png)
 
 
 | Condition | Latency (cycles) | Latency |
@@ -228,7 +227,28 @@ Using this counter, to find the current time, one must execute the command `Time
 
 **Takeaways:** This is the quantitative proof of the IDS detection and classification system. The detection itself is in microseconds, and the millisecond tail is the cost of handling multiple frames. Something I realized from this is the observer effect. By putting out these timers and uart print statements for latency, I am essentially increasing the latency. 
 
-**ISR Execution Time:**
+## Performance — ISR Execution Time
+
+**Measurement:** Duration of the CAN1 receive interrupt handler. It fills up `StartTime` at the start of the function before anything happens. It fills up `StopTime` before the return statement and after the while loop ends. This shows us how long the core spends in the `CAN1_IRQHandler` per invocation. While the interrupt runs, everything else is paused so now we know how much time this costs us. 
+
+**What I used:** Same DWT Cycle Counter as before
+
+After the time difference is calculated inside the ISR, it is compared with a variable `maxISRCycles`. If the current delta is bigger than the max, set the max to the current delta. This is then sent on to main for printing. 
+
+**Results:**
+
+![alt text](./images/image-11.png)
+
+| Measure | Cycles | Time |
+|---|---|---|
+| Typical (single object)              | ~304 | ~2.53 µs |
+| Measured max (single object, bus load) | ~340 | ~2.83 µs |
+
+From 304, it goes to 336 for a bit, then becomes stable at 340. The small difference here could be due to the `BUSY` poll on the IF2 transfer. 
+
+The drain loop never engages. The handler is built to drain all pending messages in a loop. So, the worst case with N objects in one invocation never happens. 2 or more objects dont invocate the IRQ at the same time which I assumed it would. The ISR always runs for that ONE call. A frame at 500kbps takes the bus for about 250us. The handler runs in approx. 2.5us. So, the frames are 100x further apart than the handler. By the time the second frame finished arriving, the first one's ISR is long done. Every interrupt processes exactly one object. What I expected here for worst case was 4 message objects x 340 cycles per ISR = 11us. This is never observed. 
+
+**Takeaways:** The ISR stays short by design. Captures the frame, sets a flag, leaves. A 2.83us worst case against the fastest message period (RPM, 500ms) is a decent ISR runtime. This matters for a real-time argument
 
 **CPU Headroom:**
 
