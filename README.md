@@ -250,6 +250,33 @@ The drain loop never engages. The handler is built to drain all pending messages
 
 **Takeaways:** The ISR stays short by design. Captures the frame, sets a flag, leaves. A 2.83us worst case against the fastest message period (RPM, 500ms) is a decent ISR runtime. This matters for a real-time argument
 
-**CPU Headroom:**
+## Performance — CPU Headroom
 
-**False-Positive Behaviour:**
+**Measurement:** We are looking for the CPU headroom. In order to find this, we must find the utilization of the CPU for the main part of the program. This means from the moment that the interrupt flag is checked for a new message object until after the message has been printed, is our time per message. Utilization is the time taken per message divided by its period. Headroom is the slack (1 - utilization). It is how much more the system can absorb before it stops keeping up.
+
+**What I used:** The same DWT counter was used. The main method for figuring out the headroom is sum-of-work. For a periodic system, utilization is the sum of the cost/period of each recurring task. The StopTime is after the message print, for we need to account for the uart print in the cpu time. 
+
+**Results:** 
+
+![alt text](./images/image-12.png)
+
+Using these readings, we can find the maximum CPU time this main pipeline takes. Max=616226 cycles. This comes out to be approximately 5.13ms. Min=440885 cycles which comes out to be approximately 3.67ms.
+
+| Component | Cost per frame |
+|---|---|
+| ISR (capture)              | ~2.83 µs |
+| Main-side (detect + print) | ~3.67–5.13 ms |
+
+Per frame, the main side is roughly **1800 x ISR**. This entire cost is the UART print. We are going to use the maximum value to find the CPU utilization for the super-loop
+
+RPM = 5.13 / 500 = 1.026%
+Throttle = 5.13 / 1000 = 0.513%
+Vehicle Speed = 5.13 / 2000 = 0.2565%
+Coolant Temperature = 5.13 / 4000 = 0.12825%
+
+Total Utilization = 1.92%
+Total Headroom = 1 - Total Utilization = 98.08%
+
+So, approximately 2 percent utilization and 98% headroom which is a consiberably good amount of headroom. It can be increased by turning the UART into interrupt-driven, or lowering the amount of chars it has to output. The UART busy wait is a main eater of the CPU time
+
+**Why the time has a min and max value:** When a print starts against a drained FIFO buffer, the first 16 bytes are dumped into the hardware buffer in a few nanoseconds, bypassing that busy while loop. This results in the 3.67ms time frame. For the other case, the FIFO would already be saturated from the previous message. The CPU hits the while loop on the very first character and must wait for the hardware. This results in an increased time gap. Therefore, we get the larger 5.13ms value. This is pretty interesting to note, as UART is not just a simple print, but rather also eats up some CPU time which COULD be used elsewhere. 

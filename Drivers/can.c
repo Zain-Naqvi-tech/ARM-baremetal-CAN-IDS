@@ -6,8 +6,6 @@
 #include "systick.h"
 #include "msp432e401y.h"
 
-volatile uint32_t maxISRCycles = 0;
-
 void CAN_Message_Table_Init(volatile Msg* msg) {
 
         //Populating the simulated ENGINE RPM Message object
@@ -217,7 +215,6 @@ void CAN1_Init(void) {
 //Setting up CAN1 Interrupt Service Routine to receive and pass the message object forward
 void CAN1_IRQHandler(void) {
 		
-		StartTime = DWT->CYCCNT; //Find the start time of the ISR
 		uint32_t messageObject = CAN1_INT_R & CAN_INT_INTID_M; //extracts object number
 	
 		if (messageObject == 0x8000) {
@@ -275,14 +272,6 @@ void CAN1_IRQHandler(void) {
 				messageObject = CAN1_INT_R & CAN_INT_INTID_M;
 	
 			}
-		}
-		
-		StopTime = DWT->CYCCNT; //Find the end time for ISR
-		
-		TimeDifference = StopTime - StartTime;
-		
-		if (TimeDifference > maxISRCycles) {
-			maxISRCycles = TimeDifference;
 		}
 		
 		return;

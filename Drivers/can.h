@@ -47,12 +47,6 @@ typedef enum {
 volatile extern Msg message[NUMBER_OF_EVENTS + 1];
 volatile extern uint32_t InterruptFlag; //This will be used as a bitmask -> 0x00000000 (8*4=32)
 
-volatile extern uint32_t StopTime; //used for the stop time (measuring time difference)
-volatile extern uint32_t TimeDifference; 
-volatile extern uint32_t StartTime;
-
-volatile extern uint32_t maxISRCycles; //used for maximum cycle count for the ISR (for ISR execution time)
-
 void CAN0_Init(void);
 void CAN1_Init(void);
 

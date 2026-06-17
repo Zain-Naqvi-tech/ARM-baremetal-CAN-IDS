@@ -81,6 +81,8 @@ int main(void) {
 			
 			if (InterruptFlag & (1 << i)) {
 				
+				StartTime = DWT->CYCCNT; //Start time for the overhead calculation
+				
 				uint32_t valueDelta = ABS( (int32_t)((message[i].payload[0] << 8) | (message[i].payload[1])) - (int32_t)(message[i].lastValue) );
 				
 				if ((message[i].status != OVER_RANGE) && (valueDelta > message[i].maxMargin)) {
@@ -109,10 +111,12 @@ int main(void) {
 					
 					message[i].lastArrived = ticks;
 					
-					UART_printf("TD = ");
-					UART_numeric_print(maxISRCycles);
-					
 					Message_Object_UART_Print(0, &message[i]); 
+					
+					StopTime = DWT->CYCCNT;
+					TimeDifference = StopTime - StartTime;
+					UART_printf("TD = ");
+					UART_numeric_print(TimeDifference);
 					
 					//We need to disable interrupts for a read-modify-write sequence in order to ensure we do not miss any messages
 					__disable_irq();
