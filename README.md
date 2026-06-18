@@ -3,7 +3,7 @@
 **A multi-ECU automotive CAN network featuring a custom firmware-level Intrusion Detection System (IDS).**
 
 ## Project Overview
-This project simulates a secure, multi-node automotive controller area network (CAN) entirely on a single ARM Cortex-M4 microcontroller (MSP432E401Y) using bare-metal C. 
+This project implements a secure, multi-node automotive controller area network (CAN) entirely on a single ARM Cortex-M4 microcontroller (MSP432E401Y) using bare-metal C. 
 
 By leveraging the dual built-in CAN controllers (CAN0 and CAN1) routed through external physical transceivers, this system creates two independent hardware nodes operating on a shared physical bus:
 * **Node 1 (Engine ECU):** Broadcasts realistic automotive telemetry (RPM, throttle, speed, and temperature) at standard vehicular message rates.
@@ -96,7 +96,7 @@ UART2 CAN trace in RealTerm![alt text](./images/image-1.png)
 
 ## Milestone 3: Multi-ECU Bus + Interrupt-Driven Monitor
 
-Simulate a realistic multi-ECU CAN bus and monitor it live. Four ECUs broadcasting on independent schedules. The node receiving every frame through interrupts and streaming it to UART on RealTerm
+Implement a realistic multi-ECU CAN bus and monitor it live. Four ECUs broadcasting on independent schedules. The node receiving every frame through interrupts and streaming it to UART on RealTerm
 
 **TX:** Sends four message objects at their own periods -> RPM (0x100, 500ms), throttle (0x200, 1s), speed (0x300, 2s), and coolant (0x400, 4s). Different CANIDs for all
 
@@ -287,7 +287,7 @@ So, approximately 2 percent utilization and 98% headroom which is a consiberably
 
 **Measurement:** How often the IDS alarms on false positives. This isolates frames wrongly flagged as attacks. False Positive Rate is FP / (FP + TN) where TN is True Negative. This number must be zero for the IDS to carry weight. This is important, for a wrongly flagged message object can cause devastating failures in the real-world systems and potentially cause unnecessary damages. 
 
-**Method:** Constant-valued traffic would not be able to tell us the reliability of the system. The attacks were changed to simulate edge cases and changing values
+**Method:** Constant-valued traffic would not be able to tell us the reliability of the system. The attacks were changed to implement edge cases and changing values
 
 SPIKE: Value oscillated up and down within the per-signal margin. The downward leg is critical -> The subtraction between the values would return a negative number and we need to deal with it. Initially, I conducted the subtraction using unsigned integers which would wrap the number around to a very big value and ruin the results. However, with the change of making them signed, and adding an ABS pre-processor function to use on the subtraction, I was hopeful it would work. Stayed OK in both directions, so our False Positive Rate is 0
 
