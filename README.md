@@ -280,3 +280,28 @@ Total Headroom = 1 - Total Utilization = 98.08%
 So, approximately 2 percent utilization and 98% headroom which is a consiberably good amount of headroom. It can be increased by turning the UART into interrupt-driven, or lowering the amount of chars it has to output. The UART busy wait is a main eater of the CPU time
 
 **Why the time has a min and max value:** When a print starts against a drained FIFO buffer, the first 16 bytes are dumped into the hardware buffer in a few nanoseconds, bypassing that busy while loop. This results in the 3.67ms time frame. For the other case, the FIFO would already be saturated from the previous message. The CPU hits the while loop on the very first character and must wait for the hardware. This results in an increased time gap. Therefore, we get the larger 5.13ms value. This is pretty interesting to note, as UART is not just a simple print, but rather also eats up some CPU time which COULD be used elsewhere. 
+
+## Performance — False-Positive Behavior
+
+**Measurement:** How often the IDS alarms on false positives. This isolates frames wrongly flagged as attacks. False Positive Rate is FP / (FP + TN) where TN is True Negative. This number must be zero for the IDS to carry weight. This is important, for a wrongly flagged message object can cause devastating failures in the real-world systems and potentially cause unnecessary damages. 
+
+**Method:** Constant-valued traffic would not be able to tell us the reliability of the system. The attacks were changed to simulate edge cases and changing values
+
+SPIKE: Value oscillated up and down within the per-signal margin. The downward leg is critical -> The subtraction between the values would return a negative number and we need to deal with it. Initially, I conducted the subtraction using unsigned integers which would wrap the number around to a very big value and ruin the results. However, with the change of making them signed, and adding an ABS pre-processor function to use on the subtraction, I was hopeful it would work. Stayed OK in both directions, so our False Positive Rate is 0
+
+OVER_RANGE: Value held one count BELOW the limit (5999 against a 6000 limit). Stays OK. This was more of an edge case test. The collision between SPIKE and OVER_RANGE was conducted in the same run. The value, initially at 800, was raised to 5999 (which raised SPIKE as expected) then 6500 which would raise BOTH spike and OVER_RANGE. But because OVER_RANGE has precedence, it was chosen. Then, it oscillated between the two. False positive rate is 0
+
+TOO_FAST: Never fires under scheduled arrival. Only a deliberate early frame triggers it. 
+
+MISSING/UNKNOWN_ID: On-time arrivals and known IDs are never flagged
+
+**Results:**
+| Detector   | Benign stress applied                   | False positives |
+|---|---|---|
+| SPIKE      | up/down oscillation within margin       | 0 |
+| OVER_RANGE | value held one count below the limit    | 0 |
+| TOO_FAST   | scheduled (non-early) arrival           | 0 |
+| MISSING    | on-time arrival                         | 0 |
+| UNKNOWN_ID | known IDs only                          | 0 |
+
+False Positive rate is 0 percent across all detectors under benign and boundary traffic.

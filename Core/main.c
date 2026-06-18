@@ -115,8 +115,8 @@ int main(void) {
 					
 					StopTime = DWT->CYCCNT;
 					TimeDifference = StopTime - StartTime;
-					UART_printf("TD = ");
-					UART_numeric_print(TimeDifference);
+					//UART_printf("TD = ");
+					//UART_numeric_print(TimeDifference);
 					
 					//We need to disable interrupts for a read-modify-write sequence in order to ensure we do not miss any messages
 					__disable_irq();

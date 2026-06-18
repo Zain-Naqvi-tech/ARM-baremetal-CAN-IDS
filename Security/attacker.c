@@ -1,6 +1,8 @@
 #include "attacker.h"
 #include "tm4c1294ncpdt.h"
 
+volatile uint32_t spikeFlag = 1;
+
 void INJECT_TOO_FAST(volatile Msg* message, uint32_t index) {
 
 	CAN0_Transmit(message, index); //attacks the bus with the THROTTLE 
@@ -9,9 +11,19 @@ void INJECT_TOO_FAST(volatile Msg* message, uint32_t index) {
 
 void INJECT_OVER_RANGE(volatile Msg* message, uint32_t index) {
 	
-	//Inject RPM value of 6500 (0x1964)
-	message[index].payload[0] = 0x19; //Set value for RPM Test
-	message[index].payload[1] = 0x64; //Set value for RPM Test
+	if (spikeFlag) {
+		//5999
+		message[index].payload[0] = 0x17;
+    message[index].payload[1] = 0x6F;
+		spikeFlag = 0;
+	}
+	
+	else {
+		//Inject RPM value of 6500 (0x1964)
+		message[index].payload[0] = 0x19; //Set value for RPM Test
+		message[index].payload[1] = 0x64; //Set value for RPM Test
+		spikeFlag = 1;
+	}
 
 }
 

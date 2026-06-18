@@ -12,4 +12,6 @@ bool INJECT_MISSING(uint32_t startTime, uint32_t stopTime, uint32_t index);
 void INJECT_UNKNOWN_ID(volatile Msg* message, uint32_t index);
 void INJECT_SPIKE(volatile Msg* message, uint32_t index);
 
+volatile extern uint32_t spikeFlag;
+
 #endif
