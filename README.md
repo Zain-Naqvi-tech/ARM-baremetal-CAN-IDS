@@ -305,3 +305,9 @@ MISSING/UNKNOWN_ID: On-time arrivals and known IDs are never flagged
 | UNKNOWN_ID | known IDs only                          | 0 |
 
 False Positive rate is 0 percent across all detectors under benign and boundary traffic.
+
+## Bus-Off Recovery (Scoped out)
+
+**What it is:** CAN nodes have a Transmit error counter (TEC) and a receive error counter (REC). I used them for my initial testing phase during the bare-metal setup of the nodes. I also learned that the TEC gets pushed up for each failed transmission. Once the TEC goes past 255, it is Bus-Off. A node that keeps failing to transmit takes itself completely off the network so it does not bring all of it down. In Bus-Off, the node neither transmits nor receives. 
+
+**How it would be handled if implemented:** The CAN controller enters bus-off automatically when the TEC overflows. It sets the INIT bit in the CAN Control Register (CANCTL), stopping all activities. Once INIT has been cleared, the device then waits for 129 occurrences of bus idle (129 * 11 consecutive high bits) before resuming normal operations. At the end of the bus-off recovery sequence, the Error Management Counters are reset. The CANSTS register has information on the Bus-Off as well, where it raises the BOFF flag so that software can observe the condition. Recovery is not automatic. It remains in Bus-Off until the INIT bit is cleared. 
