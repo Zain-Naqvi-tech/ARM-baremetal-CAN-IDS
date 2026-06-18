@@ -1,6 +1,6 @@
 # ARM-BareMetal-CAN-IDS
 
-**A simulated multi-ECU automotive CAN network featuring a custom firmware-level Intrusion Detection System (IDS).**
+**A multi-ECU automotive CAN network featuring a custom firmware-level Intrusion Detection System (IDS).**
 
 ## Project Overview
 This project simulates a secure, multi-node automotive controller area network (CAN) entirely on a single ARM Cortex-M4 microcontroller (MSP432E401Y) using bare-metal C. 
@@ -11,7 +11,7 @@ By leveraging the dual built-in CAN controllers (CAN0 and CAN1) routed through e
 
 ## At a Glance
 
-A bare-metal automotive CAN intrusion detection system on a single ARM Cortex-M4 (MSP432E401Y). Dual on-chip CAN controllers wired through real transceivers into a two-node bus, written from raw registers with no vendor HAL. Five anomaly detectors, an on-demand fault-injection framework driven over UART, and a live Python dashboard.
+Five anomaly detectors, an on-demand fault-injection framework driven over UART, and a live Python dashboard.
 
 | Detection | What it catches | Method | Verified on hardware |
 |-----------|-----------------|--------|----------------------|
@@ -24,8 +24,10 @@ A bare-metal automotive CAN intrusion detection system on a single ARM Cortex-M4
 **Interactive:** every attack is triggerable live from the host with a single keypress over UART, and the dashboard shows each signal decoded into real units with color-coded status. Detection spans three axes: **value** (is it possible?), **timing** (too fast, or gone?), and **identity** (does this ID belong?), plus a rate-of-change rule for spoofing that stays within legal bounds.
 
 Demos:
-https://youtu.be/XWLsz7M9KcM
-https://youtu.be/OpzYNLC9uAE
+
+[Python Dashboard](https://youtu.be/XWLsz7M9KcM) 
+
+[Realterm Ouput](https://youtu.be/OpzYNLC9uAE)
 
 Full implementation, the debugging stories, and the design decisions behind each detector are in the milestones below. Performance Metrics are included at the end
 
